@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#142c35">
+  <title>집의 시간 — 실거래로 배우는 부동산</title>
+  <meta name="description" content="2020년의 정보로 집을 선택하고, 2026년 실제 실거래 결과를 확인하는 부동산 실습.">
+  <link rel="stylesheet" href="./vendor/leaflet.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./vendor/leaflet.js" defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="집의 시간 처음으로"><span class="brand-mark">⌂</span><span>집의 시간<small>HOUSING DECISION LAB</small></span></a>
+    <nav aria-label="도움말"><button class="text-button" data-action="guide">진행 가이드</button><button class="text-button" data-action="sources">데이터와 계산 기준 <span>↗</span></button></nav>
+    <span class="header-label">실거래 기반 실습</span>
+  </header>
+  <main id="app"><div class="loading-state"><span class="loader"></span><h1>실거래 자료를 불러오고 있어요</h1><p>과거의 선택과 실제 결과를 준비합니다.</p></div></main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="dialog"><div class="dialog-head"><span id="dialog-label"></span><button aria-label="닫기" data-action="close-dialog" class="icon-button">×</button></div><div id="dialog-content"></div></dialog>
+  <footer class="site-footer"><span>집의 시간 · 대학생을 위한 부동산 의사결정 실습</span><span>실제 거래 데이터 / 가상 인물 / 과거 제도 참고 계산</span></footer>
+</body>
+</html>

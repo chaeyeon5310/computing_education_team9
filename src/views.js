@@ -12,41 +12,39 @@ function basisEvidenceHtml(h) {
   return `<div class="evidence-block">\
 <div class="evidence-head">\
 <b>이 매물을 판단할 때 확인할 근거</b>\
-<span>실제 정보 / 가상 자료 구분</span>\
 </div>
  <div class="evidence-grid">
   <div>\
 <small>실제 · 2020년 거래 표본</small>\
 <b>${h.tradeCount}건</b>\
-<em>동일 표본 기준 · 거래가 적으면 불확실성 증가</em>\
+<em>동일 표본 기준</em>\
 </div>
   <div>\
 <small>실제 출발가 · 2020년 1~9월</small>\
 <b>${won(h.basePrice)}</b>\
-<em>원본 실거래 중앙값 · 현재 매물 호가 아님</em>\
+<em>원본 실거래 중앙값</em>\
 </div>
   <div>\
 <small>참고 · 표본 내 유사 면적 중앙값</small>\
 <b>${won(peers.median)}</b>\
-<em>${peers.scope} · ${peers.count}개 표본 / 지역 전체 대표 아님</em>\
+<em>${peers.scope} · ${peers.count}개 표본</em>\
 </div>
   <div>\
 <small>가상 · ${regionKey(h)} 지역 매매거래 변화</small>\
 <b>${session.year === 2020 ? '시작 연도' : pct(diff(reg.transactions, last.transactions))}</b>\
-<em>광역단위 월간 거래 · 해당 단지 거래량 아님</em>\
+<em>광역단위 월간 거래</em>\
 </div>
   <div>\
 <small>가상 · ${regionKey(h)} 지역 준공물량</small>\
 <b>${KR.format(reg.completions)}호</b>\
-<em>시도 단위 향후 12개월 공급 전망 · 단지 반경 자료 없음</em>\
+<em>시도 단위 향후 12개월 공급 전망</em>\
 </div>
   <div>\
 <small>가상 · ${regionKey(h)} 지역 미분양</small>\
 <b>${KR.format(reg.unsold)}호</b>\
-<em>최근 발표된 시도 단위 가상 값 · 해당 생활권 미분양 아님</em>\
+<em>최근 발표된 시도 단위 가상 값</em>\
 </div>
  </div>\
-<p>※ 실제 매수라면 최근 같은 면적·층 실거래, 등기·권리관계, 단지 반경 입주 예정 물량, 주변 전세가율을 추가 확인해야 합니다. 여기에는 원본 데이터가 없어 표시하지 않습니다.</p>\
 </div>`;
 }
 
@@ -80,7 +78,7 @@ function introHtml() {
 </button>`).join('')}</div>\
 <button class="main-button" data-action="start">2020년 부동산 탐색 시작 <span>↗</span>\
 </button>\
-<p class="origin">아파트 실제 위치·2020년 실거래와 가상 시장 시나리오를 명확히 구분해 제공합니다. 계정이나 서버 저장은 필요 없습니다.</p>\
+<p class="origin">계정이나 서버 저장은 필요 없습니다.</p>\
 </div>\
 <div class="intro-right">\
 <div class="intro-caption">게임 화면 미리보기</div>\
@@ -101,7 +99,6 @@ function introHtml() {
 </div>\
 </div>\
 </div>\
-<div class="intro-foot">실거래를 그대로 재현한 게임이 아닙니다. 실거래는 2020년 기준선이며 이후 수치·사건은 역사적 시장 메커니즘을 모방한 시뮬레이션입니다.</div>\
 </div>\
 </div>\
 </section>`;
@@ -165,7 +162,7 @@ function neighborhoodWatchHtml() {
   return `<section class="v8-project-news">\
 <div>\
 <b>생활권 개발·공급 뉴스</b>\
-<small>실제 도시 위치를 활용한 <strong>가상 프로젝트</strong> · 향후 결과는 비공개</small>\
+<small>향후 결과는 비공개</small>\
 </div>\
 <div class="v8-project-news-cards">${[...newly, ...prior.slice(-3)].map(p => `<article>\
 <span>${p.notice === session.year ? '올해 새 소식' : '진행 중'} · ${safe(p.kind)}</span>\
@@ -184,7 +181,7 @@ function newsHtml() {
     indCard('최근 발표 월말 미분양', `${nfmt(d.unsold)}호`, dif(d.unsold, prior.unsold, '호'), '계약되지 않은 공급이 누적되고 있는가'),
     indCard('최근 12개월 전세가격 변화', `${d.rentChangePct > 0 ? '+' : ''}${d.rentChangePct.toFixed(1)}%`, '수도권 아파트 · 전년 대비', '임차 수요와 매수 수요의 변화'),
     indCard('주택담보대출 금리', `${d.rate.toFixed(1)}%`, session.year === 2020 ? '초기 가정' : `${(d.rate - prior.rate) >= 0 ? '+' : ''}${(d.rate - prior.rate).toFixed(1)}%p · 전년 대비`, '대출 원리금 부담과 매수 가능액'),
-    indCard('게임 내 LTV 상한', `${Math.round(d.ltv * 100)}%`, '일률 가정 · 현실 규제 아님', '집값 대비 대출 한도 참고')
+    indCard('게임 내 LTV 상한', `${Math.round(d.ltv * 100)}%`, '일률 가정', '집값 대비 대출 한도 참고')
   ];
   const local = d.local.length ? `<div class="local-watch">\
 <b>지역별 이슈 · 계획과 확정은 구분하기</b>\
@@ -204,7 +201,6 @@ function newsHtml() {
   const regional = `<div class="regional-brief">\
 <div class="regional-brief-head">\
 <strong>지역별 수급·거래 비교</strong>\
-<small>실제 통계에 사용되는 단위로 만든 게임 시나리오</small>\
 </div>\
 <div class="regional-overflow">\
 <table>\
@@ -225,10 +221,9 @@ function newsHtml() {
 <div>\
 <span class="eyebrow">${session.year} · 종합 부동산 브리핑</span>\
 <h2>${safe(d.title)}</h2>\
-<p class="market-explainer">현재 투자자가 알 수 있는 가상의 공개 정보와 향후 공급 전망을 제공합니다. <b>금리·거래·공급·미분양·전세</b>를 함께 보세요. 모든 숫자는 <b>가상 수치</b>입니다.</p>\
+<p class="market-explainer"><b>금리·거래·공급·미분양·전세</b>를 함께 보세요.</p>\
 </div>\
 <div class="news-controls">\
-<span class="sim-stamp">실제 지표 아님 · 가상 시나리오 수치</span>\
 <button class="small-outline" data-action="news-toggle">${moreNews ? '뉴스 접기' : '모든 뉴스 보기'} ${moreNews ? '⌃' : '⌄'}</button>\
 </div>\
 </div>\
@@ -252,9 +247,8 @@ function newsHtml() {
 <span>③ 대출·위험</span>\
 <p>금리 상승과 소득 변동에도 현금과 월 상환액을 감당할 수 있는가?</p>\
 </div>\
-<small>이 게임은 실거래 시계열·단지별 신규 공급 자료가 없어 투자 판단에 필요한 정보가 일부 누락돼 있습니다. 결론을 단정하지 말고 여러 신호를 비교하세요.</small>\
 </div>\
-<div class="simulation-note">현실 기준: <a href="https://www.reb.or.kr/r-one/" target="_blank" rel="noopener">한국부동산원 통계</a> · <a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토부 실거래가</a> · <a href="https://ecos.bok.or.kr/" target="_blank" rel="noopener">한국은행 금리</a>. 게임 수치는 실제 공표값이 아니며 지역·기간별 통계 범위를 구분해 참고했습니다.</div>\
+<div class="simulation-note">현실 기준: <a href="https://www.reb.or.kr/r-one/" target="_blank" rel="noopener">한국부동산원 통계</a> · <a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토부 실거래가</a> · <a href="https://ecos.bok.or.kr/" target="_blank" rel="noopener">한국은행 금리</a></div>\
 </section>`;
 }
 
@@ -344,7 +338,7 @@ function listingPanel() {
 <select aria-label="매물 정렬" data-filter="sort">${[['price', '낮은 가격순'], ['high', '높은 가격순'], ['new', '신축순'], ['area', '넓은 면적순'], ['rise', '최근 상승순']].map(([k, v]) => `<option value="${k}" ${filter.sort === k ? 'selected' : ''}>${v}</option>`).join('')}</select>\
 </div>\
 <div class="listing-scroll" id="listing-scroll">${visible.length ? visible.map(listCard).join('') : '<p class="none-found">조건에 맞는 매물이 없어요.<br>검색 조건을 바꿔보세요.</p>'}${matches.length > visibleCount ? `<button class="show-more" data-action="more">더 보기 (${Math.min(matches.length - visibleCount, 18)}개) ↓</button>` : ''}</div>\
-<div class="list-footer">실제 아파트 단지 610곳 · 주택형별 가격 표본<br>매매 가능 매물이 아닌 <b>가상 거래 기회</b>입니다.</div>\
+<div class="list-footer">실제 아파트 단지 610곳 · 주택형별 가격 표본</div>\
 </aside>`;
 }
 
@@ -352,7 +346,7 @@ function localProjectInfoHtml(h) {
   const near = localProjects(h, session.year).filter(e => e.proximity > .17);
   if (!near.length) return '';
   return `<div class="v8-projects">\
-<b>현재까지 알려진 생활권 변수 <small>가상 계획 · 실제 개발계획 아님</small>\
+<b>현재까지 알려진 생활권 변수\
 </b>${near.slice(0, 3).map(e => `<div>\
 <span>${safe(e.kind)}</span>\
 <strong>${safe(e.title)}</strong>\
@@ -402,17 +396,16 @@ function detailHtml(h) {
 <span>${hist[0].year}년</span>\
 <span>${hist.at(-1).year}년</span>\
 </div>\
-<small class="graph-caption">${session.year === 2020 ? '2020년 실거래 기준점 · 이전 연도 데이터 미제공' : '2020년 실거래 기준점 이후는 가상 가격 흐름'}</small>\
 </div>${localProjectInfoHtml(h)}${ev ? `<div class="area-insight">\
 <b>생활권 정보 · ${safe(ev.topic)}</b>\
 <p>${safe(ev.headline)}</p>\
 <small>올해의 영향은 다른 변수와 결합되어 가격에 반영됨</small>\
 </div>`: ''}${basisEvidenceHtml(h)}${session.year > 2020 ? `<div class="price-reasons">\
-<b>올해 게임 내 가격 변동 원인 <small>검증된 인과효과 아님</small>\
+<b>올해 게임 내 가격 변동 원인\
 </b>${componentsFor(h, session.year).filter(x => Math.abs(x.value) > .00005).map(x => `<div>\
 <span>${safe(x.label)}</span>\
 <strong>${displayRate(x.value)}</strong>\
-</div>`).join('')}<p class="model-disclaimer">이 수치는 게임이 정한 계수의 계산 결과입니다. 실제 한국 시장에서 추정·검증된 인과효과가 아닙니다.</p>\
+</div>`).join('')}\
 </div>`: ''}<div class="detail-finance">\
 <div>\
 <span>최대 대출 가정</span>\
@@ -427,7 +420,7 @@ function detailHtml(h) {
 <b>${won(q.month)}</b>\
 </div>\
 </div>\
-<div class="budget-ribbon ${q.can ? 'available' : 'not-yet'}">${q.can ? '✓ 현재 조건으로 매수 가능' : `현재 부족한 자기자금 ${won(q.shortfall)} · 저축·갈아타기로 도전`}</div>${session.phase === 'decision' ? `${owned ? '<button class="btn-muted" disabled>현재 보유 중인 집</button>' : `<button class="main-button buy-cta" data-action="buy" data-id="${safe(h.id)}">${session.houseId ? '이 집으로 갈아타기' : '이 집 매수하기'} ${q.can ? '↗' : '· 예산 확인'}</button>`}` : '<div class="detail-disabled">다음 해로 진행하면 거래할 수 있어요.</div>'}<small class="data-caveat">※ 실제 단지·위치는 국토부 자료 기반. 2020년 가격 외 연도별 가격·뉴스·통계 숫자는 가상. 교육용 투자이며 실제 매물 제안이 아닙니다.</small>\
+<div class="budget-ribbon ${q.can ? 'available' : 'not-yet'}">${q.can ? '✓ 현재 조건으로 매수 가능' : `현재 부족한 자기자금 ${won(q.shortfall)} · 저축·갈아타기로 도전`}</div>${session.phase === 'decision' ? `${owned ? '<button class="btn-muted" disabled>현재 보유 중인 집</button>' : `<button class="main-button buy-cta" data-action="buy" data-id="${safe(h.id)}">${session.houseId ? '이 집으로 갈아타기' : '이 집 매수하기'} ${q.can ? '↗' : '· 예산 확인'}</button>`}` : '<div class="detail-disabled">다음 해로 진행하면 거래할 수 있어요.</div>'}\
 </div>`;
 }
 
@@ -510,9 +503,8 @@ function appHtml() {
 <span class="eyebrow">MAP · PROPERTY SEARCH</span>\
 <h2>지도에서 매물 찾기</h2>\
 </div>\
-<span class="source-pill">ⓘ 실제 단지·좌표 / 2020 실거래 기준 / 이후 가상 가격</span>\
 </div>${marketToolbar()}<div class="map-layout">${listingPanel()}${mapContent()}</div>\
-</section>${decisionHtml()}<section class="bottom-note">실제 아파트 이름·주소·지도 좌표를 사용하지만 거래 가능한 매물 공고는 아닙니다. 각 단지의 표본 면적·가격을 활용한 학습용 투자 기회입니다. ${session.year === 2020 ? '현재 가격은 실제 아파트의 2020년 1~9월 중위 거래가격입니다.' : '2021~2026년 개별 아파트 가격은 실제 거래값이 아닌 규칙 기반 가상 가격입니다.'}</section>`;
+</section>${decisionHtml()}`;
 }
 
 function ledgerSummary() {
@@ -543,7 +535,7 @@ function explainHoldingHtml(log) {
 <span>${safe(f.label)}</span>\
 <b>${displayRate(f.value)}</b>\
 </div>`).join('')}</div>\
-<small>여기 표시한 %p는 <b>게임 계산식에 따른 기여분</b>입니다. 실제 인과관계나 현실의 단지별 상승 이유가 검증됐다는 뜻이 아닙니다. 시장 상한·다른 요인까지 합친 전체 분해는 매물 상세에서 볼 수 있습니다.</small>\
+<small>시장 상한·다른 요인까지 합친 전체 분해는 매물 상세에서 볼 수 있습니다.</small>\
 </div>`;
 }
 
@@ -574,7 +566,7 @@ function finalAuditHtml() {
   return `<section class="final-audit">\
 <div class="section-eyebrow">PERFORMANCE ATTRIBUTION</div>\
 <h3>집값 말고, 실제 게임 자산은 왜 변했나?</h3>\
-<p>매년의 가격 변동, 이자, 주거비, 거래비용을 구분한 <b>게임 내부 회계</b>입니다. 현실의 세금·투자수익을 재현한 정산이 아닙니다.</p>
+<p>매년의 가격 변동, 이자, 주거비, 거래비용을 구분한 <b>게임 내부 회계</b>입니다.</p>
  <div class="audit-ledger">\
 <div>\
 <span>시작 현금</span>\
@@ -609,16 +601,9 @@ function finalAuditHtml() {
  <div class="audit-compare">\
 <b>아예 집을 사지 않고 대기했다면?</b>\
 <strong>${won(counterfactual)}</strong>\
-<small>프로필별 소득 성장·연 저축과 임차비 상승 가정, 예금이자·물가·세금 제외. 게임 내부 비교이며 최적 전략 추천이 아닙니다.</small>\
+<small>프로필별 소득 성장·연 저축과 임차비 상승 가정, 예금이자·물가·세금 제외.</small>\
 </div>
  <h3>내가 보유한 집의 가격은 왜 움직였나?</h3>${holding.length ? holding.map(explainHoldingHtml).join('') : '<div class="audit-empty">보유한 아파트가 없어서 집값 기여분은 없습니다. 대기 전략에서 중요한 것은 저축과 임차비, 매수 기회비용입니다.</div>'}
- <div class="audit-limit">\
-<b>이 결과로 알 수 있는 것과 없는 것</b>\
-<p>\
-<strong>알 수 있는 것</strong> · 이 게임이 어떤 입력값·가정·가중치로 결과를 냈는지, 어느 해에 무엇이 유리하거나 불리하게 작용했는지.</p>\
-<p>\
-<strong>알 수 없는 것</strong> · 해당 실제 아파트가 현실에서 왜 올랐는지, 특정 뉴스의 실제 인과효과, 다음 시장을 맞힐 확률. 세부 생활권 사건과 가구 소득 성장도 모두 가상 가정이며, 현재는 검증된 가격예측·투자추천 모델이 아닙니다.</p>\
-</div>
  </section>${annualDecisionReview()}`;
 }
 
@@ -633,12 +618,11 @@ function marketDifferenceHtml() {
   return `<section class="final-audit">\
 <div class="section-eyebrow">MARKET DIVERGENCE</div>\
 <h3>같은 7년, 모든 집이 똑같이 움직이지 않았어요</h3>\
-<p>아래는 실제 아파트 위치와 2020년 실거래 기준가에서 출발한 <b>가상 가격 경로</b> 비교입니다. 어느 단지가 더 많이 움직였는지, 왜 그랬는지 위의 연간 요인 분해와 함께 확인하세요.</p>\
+<p>어느 단지가 더 많이 움직였는지, 왜 그랬는지 위의 연간 요인 분해와 함께 확인하세요.</p>\
 <div class="v8-market-compare">${sampled.map(h => `<div>\
 <span>${safe(h.district)} · ${safe(h.name)}</span>\
 <b class="${rate(h) < 0 ? 'down' : 'up'}">${pct(rate(h))}</b>\
 </div>`).join('')}</div>\
-<small>이 수익률은 실제 투자 성과가 아닙니다. 가상 개발·공급·유동성 시나리오 결과입니다.</small>\
 </section>`;
 }
 
@@ -677,7 +661,6 @@ function finalHtml() {
 <button class="main-button" data-action="restart">다른 전략으로 다시 플레이 ↻</button>\
 <button class="small-outline" data-action="method">데이터·가정·검증 범위</button>\
 </div>\
-<p class="final-disclaimer">2020년 출발 실거래가격을 제외한 시장 숫자와 결과는 가상입니다. 결과를 투자 전망으로 사용하지 마세요.</p>\
 </section>`;
 }
 
@@ -689,13 +672,8 @@ function helpHtml() {
 <li>다음 연도로 넘어가면 새로운 가격과 기사가 표시됩니다.</li>\
 <li>2026년까지의 순자산 변화와 거래 기록을 비교합니다.</li>\
 </ol>\
-<div class="help-alert">\
-<b>실제 데이터</b>: 원본 2020년 1~9월 아파트 실거래 중앙값 610개, 단지 위치/면적/연식<br>\
-<b>가상 데이터</b>: 2021~2026년 가격 및 모든 뉴스 헤드라인·경제 통계 시나리오 수치·제도 단순화</div>\
 <p>3개의 페르소나는 고소득·저현금, 저소득·고현금, 맞벌이 중간형으로 장단점이 다릅니다. 매년 소득 성장 및 저축이 적용됩니다. 처음에는 고가주택이 불가능해도 갈아타기 후 재도전할 수 있지만, 20억~30억원대 주택은 자금이 부족하면 현실적으로 살 수 없습니다.</p>\
-<p>2026년 실제 매매가격을 소급 사용해 게임 가격을 계산하지 않으므로 결과를 미리 아는 문제를 피했습니다. 시나리오는 난수가 아니라 거래량·준공·미분양·금리·전세·단지 특성에 연동된 고정 규칙으로 계산합니다.</p>\
-<p>\
-<strong>근거 한계:</strong> 거래량·금리·공급이 가격에 영향을 줄 수 있다는 방향은 선행연구와 실제 통계에서 검토할 수 있지만, 게임의 생활권·면적·연식·공급 사건별 변동 계수는 실거래에서 추정한 값이 아닙니다. 실제 지역별 상관관계나 인과효과를 주장할 수 없습니다. 게임은 단지별 주변 입주, 실거래 연간 추세, 같은 동·층 실거래 표본을 아직 제공하지 않습니다.</p>\
+<p>시나리오는 난수가 아니라 거래량·준공·미분양·금리·전세·단지 특성에 연동된 고정 규칙으로 계산합니다.</p>\
 <p class="method-links">\
 <a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토교통부 실거래가 ↗</a>\
 <a href="https://www.reb.or.kr/r-one/" target="_blank" rel="noopener">한국부동산원 R-ONE ↗</a>\

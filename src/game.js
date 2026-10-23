@@ -203,5 +203,5 @@ function openBuy(id) {
 </div>\
 </div>\
 <div class="quote-status ${q.can ? 'ok' : 'fail'}">${q.can ? '예산 조건 충족' : `지금은 ${won(q.shortfall)} 부족 · 이후 저축/기존 주택 매도 후 재도전`}</div>\
-<p class="quote-help">실제 금융상품의 자격·금리·정책과 다르게 단순화한 교육용 계산입니다. 매년 현금이 부족해지면 강제 매도가 발생할 수 있습니다.</p>${q.can ? `<button class="main-button" data-action="confirm-buy" data-id="${safe(id)}">${q.old ? '갈아타기' : '매수'} 확정 →</button>` : '<button class="small-outline" data-action="close-modal">다른 매물 찾기</button>'}`);
+<p class="quote-help">매년 현금이 부족해지면 강제 매도가 발생할 수 있습니다.</p>${q.can ? `<button class="main-button" data-action="confirm-buy" data-id="${safe(id)}">${q.old ? '갈아타기' : '매수'} 확정 →</button>` : '<button class="small-outline" data-action="close-modal">다른 매물 찾기</button>'}`);
 }

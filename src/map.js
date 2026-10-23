@@ -69,6 +69,7 @@ function updateSelectedUI() {
   const d = $('#detail-position');
   if (d) d.innerHTML = detailHtml(byId(selected));
   $$('.listing-card').forEach(el => el.classList.toggle('active', el.dataset.id === selected));
+  refreshDecisionDock();
   paintMarkers();
   save();
 }

@@ -13,8 +13,11 @@ function render(keep = false) {
     map = null;
   }
   const el = $('#app');
+  document.body.classList.toggle('game-active', screen === 'game');
   el.innerHTML = screen === 'intro' ? introHtml() : screen === 'finish' ? finalHtml() : appHtml();
   if (screen === 'game') initMap();
+  syncDecisionDock();
+  syncNewsToggle();
   save();
 }
 
@@ -41,6 +44,7 @@ function initialGame(profile) {
   mapState = null;
   visibleCount = 18;
   moreNews = true;
+  classroomUI = { news: {}, reasons: {} };
   render();
   window.scrollTo({ top: 0 });
 }

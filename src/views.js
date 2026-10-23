@@ -110,31 +110,24 @@ function topHtml() {
 </div>\
 <div class="yearline">${[2020, 2021, 2022, 2023, 2024, 2025, 2026].map(a => `<span class="yr ${a === y ? 'here' : a < y ? 'passed' : ''}">${a}</span>`).join('')}</div>\
 </div>\
-<div class="my-strip">\
+<div class="asset-summary" aria-label="내 자산 요약">\
 <div>\
 <small>현금</small>\
 <b>${briefWon(session.cash)}</b>\
 </div>\
 <div>\
-<small>현재 가구 연소득</small>\
-<b>${briefWon(currentIncome())}</b>\
-</div>\
-<div>\
-<small>보유 주택</small>\
-<b>${h ? safe(h.name) : '무주택'}</b>\
-</div>\
-<div>\
 <small>대출 잔액</small>\
 <b>${briefWon(session.loan)}</b>\
 </div>\
-<div>\
+<div class="net-worth">\
 <small>순자산</small>\
 <b>${briefWon(assets())}</b>\
 </div>\
-<div>\
-<small>진행</small>\
-<b>${y - 2019}/7년</b>\
 </div>\
+<div class="account-details">\
+<span>가구 연소득 <b>${briefWon(currentIncome())}</b></span>\
+<span>보유 주택 <b>${h ? safe(h.name) : '무주택'}</b></span>\
+<span>진행 <b>${y - 2019}/7년</b></span>\
 </div>\
 </div>`;
 }
@@ -158,11 +151,13 @@ function neighborhoodWatchHtml() {
 <b>생활권 개발·공급 뉴스</b>\
 <small>향후 결과는 비공개</small>\
 </div>\
-<div class="v8-project-news-cards">${[...newly, ...prior.slice(-3)].map(p => `<article>\
+<div class="v8-project-news-cards">${[...newly, ...prior.slice(-3)].map(p => `<details class="news-detail project-detail" data-news-key="${session.year}:project-${safe(p.id)}" ${newsIsOpen(`project-${p.id}`) ? 'open' : ''}>\
+<summary>\
 <span>${p.notice === session.year ? '올해 새 소식' : '진행 중'} · ${safe(p.kind)}</span>\
 <strong>${safe(p.title)}</strong>\
-<p>${safe(p.hint)}</p>\
-</article>`).join('')}</div>\
+</summary>\
+<div class="news-detail-body"><p>${safe(p.hint)}</p></div>\
+</details>`).join('')}</div>\
 </section>`;
 }
 
@@ -217,16 +212,20 @@ function newsHtml() {
 <h2>${safe(d.title)}</h2>\
 </div>\
 <div class="news-controls">\
-<button class="small-outline" data-action="news-toggle">${moreNews ? '뉴스 접기' : '모든 뉴스 보기'} ${moreNews ? '⌃' : '⌄'}</button>\
+<button class="small-outline" data-action="news-toggle">모두 펼치기 ⌄</button>\
 </div>\
 </div>\
-<div class="indicators indicators-six">${cards.join('')}</div>${moreNews ? `<div class="headline-grid">${d.news.map((n, i) => `<article class="headline-card">\
+<div class="indicators indicators-six">${cards.join('')}</div><div class="headline-grid">${d.news.map((n, i) => `<details class="headline-card news-detail" data-news-key="${session.year}:headline-${i}" ${newsIsOpen(`headline-${i}`) ? 'open' : ''}>\
+<summary>\
 <div class="news-type">${safe(n.category)} <span>${String(i + 1).padStart(2, '0')}</span>\
 </div>\
 <strong>${safe(n.headline)}</strong>\
+</summary>\
+<div class="news-detail-body">\
 <p>${safe(n.context)}</p>\
 <div class="invest-question">판단 포인트 · ${safe(n.question)}</div>\
-</article>`).join('')}</div>${regional}${local}` : ''}${neighborhoodWatchHtml()}<div class="decision-guide">\
+</div>\
+</details>`).join('')}</div>${regional}${local}${neighborhoodWatchHtml()}<div class="decision-guide">\
 <b>뉴스를 읽고 무엇을 판단해야 할까?</b>\
 <div>\
 <span>① 가격</span>\
@@ -436,28 +435,29 @@ function mapContent() {
 }
 
 function decisionHtml() {
-  const p = session, held = byId(p.houseId);
-  if (p.phase !== 'decision') return `<div class="decision-bar reveal-mode">\
-<div>\
+  const p = session, held = byId(p.houseId), candidate = byId(selected);
+  const canReview = candidate && candidate.id !== p.houseId;
+  if (p.phase !== 'decision') return `<div class="decision-bar decision-dock reveal-mode" role="region" aria-label="올해 결정 완료">\
+<div class="decision-context">\
 <span class="eyebrow">투자 결정 완료</span>\
 <h3>${safe(p.lastDecision || '올해 선택 완료')}</h3>\
-<p>다음 해에는 새 시장 지표와 가상 거래가격이 공개됩니다.</p>\
+<p>선택 이유 · ${safe(p.yearly.at(-1)?.reason || EXPLANATION_CATEGORIES[decisionReason()])}</p>\
 </div>\
 <button class="main-button" data-action="advance">${p.year === 2026 ? '최종 결과 보기' : '다음 연도 결과 보기 →'}</button>\
 </div>`;
-  return `<div class="decision-bar">\
+  return `<div class="decision-bar decision-dock" role="region" aria-label="올해 투자 결정">\
 <div class="decision-context">\
 <span class="eyebrow">${p.year}년 의사결정</span>\
 <h3>${held ? '보유할까, 팔까, 갈아탈까?' : '어느 집을 살까, 기다릴까?'}</h3>\
-<p>${held ? safe(held.name) + ' 보유 · 대출 ' + briefWon(p.loan) : '매물을 비교한 후 매수 또는 관망을 선택해 보세요.'} <span class="cash-alert">${cashEmergency() ? '※ 현금 여유가 적어요.' : ''}</span>\
+<p>${canReview ? '선택 매물 · ' + safe(candidate.name) : held ? safe(held.name) + ' 보유 · 대출 ' + briefWon(p.loan) : '매물을 비교한 후 매수 또는 관망을 선택해 보세요.'} <span class="cash-alert">${cashEmergency() ? '※ 현금 여유가 적어요.' : ''}</span>\
 </p>\
-<label class="reason-picker">선택 이유 <select id="decision-reason">${Object.entries(EXPLANATION_CATEGORIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>\
-</label>\
 </div>\
+<label class="reason-picker">선택 이유 <select id="decision-reason">${Object.entries(EXPLANATION_CATEGORIES).map(([k, v]) => `<option value="${k}" ${k === decisionReason() ? 'selected' : ''}>${v}</option>`).join('')}</select>\
+</label>\
 <div class="decision-buttons">${held ? `<button data-action="hold" class="decision-btn">⌂ 계속 보유</button>\
 <button data-action="sell" class="decision-btn">↗ 매도</button>\
-<button data-action="focus-list" class="decision-btn accented">⇄ 갈아타기</button>`: `<button data-action="hold" class="decision-btn">◷ 현금 보유</button>\
-<button data-action="focus-list" class="decision-btn accented">⌂ 아파트 찾기</button>`}</div>\
+<button ${canReview ? `data-action="buy" data-id="${safe(candidate.id)}"` : 'data-action="focus-list"'} class="decision-btn accented">${canReview ? '⇄ 갈아타기 검토' : '⇄ 갈아타기'}</button>`: `<button data-action="hold" class="decision-btn">◷ 현금 보유</button>\
+<button ${canReview ? `data-action="buy" data-id="${safe(candidate.id)}"` : 'data-action="focus-list"'} class="decision-btn accented">${canReview ? '⌂ 매수 검토' : '⌂ 아파트 찾기'}</button>`}</div>\
 </div>`;
 }
 

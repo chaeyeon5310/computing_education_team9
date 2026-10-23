@@ -73,8 +73,14 @@ $('#app').addEventListener('click', e => {
     return;
   }
   if (a === 'news-toggle') {
-    moreNews = !moreNews;
-    render(true);
+    const articles = $$('.news-detail');
+    const expand = articles.some(article => !article.open);
+    for (const article of articles) {
+      article.open = expand;
+      classroomUI.news[article.dataset.newsKey] = expand;
+    }
+    syncNewsToggle();
+    save();
     return;
   }
   if (a === 'filter-reset') {
@@ -133,12 +139,56 @@ $('#app').addEventListener('click', e => {
 
 $('#app').addEventListener('change', e => {
   const t = e.target;
+  if (t.id === 'decision-reason') {
+    classroomUI.reasons[session.year] = t.value;
+    save();
+    return;
+  }
   const k = t.dataset.filter;
   if (!k || screen !== 'game') return;
   filter[k] = k === 'view' ? (t.checked ? 'map' : 'all') : t.value;
   visibleCount = 18;
   render(true);
 });
+
+// Native disclosures expand in place, without rebuilding the map or decision form.
+$('#app').addEventListener('toggle', e => {
+  const article = e.target;
+  if (!article.matches('.news-detail') || !article.isConnected) return;
+  classroomUI.news[article.dataset.newsKey] = article.open;
+  syncNewsToggle();
+  save();
+}, true);
+
+function syncNewsToggle() {
+  const button = $('[data-action="news-toggle"]');
+  if (!button) return;
+  const articles = $$('.news-detail');
+  const allOpen = articles.length > 0 && articles.every(article => article.open);
+  button.textContent = allOpen ? '모두 접기 ⌃' : '모두 펼치기 ⌄';
+}
+
+let dockObserver;
+function syncDecisionDock() {
+  dockObserver?.disconnect();
+  const dock = $('.decision-dock');
+  const update = () => {
+    const height = dock ? Math.ceil(dock.getBoundingClientRect().height) + 20 : 0;
+    document.documentElement.style.setProperty('--decision-dock-space', `${height}px`);
+  };
+  update();
+  if (dock) {
+    dockObserver = new ResizeObserver(update);
+    dockObserver.observe(dock);
+  }
+}
+
+function refreshDecisionDock() {
+  const dock = $('.decision-dock');
+  if (!dock || screen !== 'game') return;
+  dock.outerHTML = decisionHtml();
+  syncDecisionDock();
+}
 
 $('#app').addEventListener('input', e => {
   if (e.target.id !== 'search' || screen !== 'game') return;

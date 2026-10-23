@@ -31,6 +31,12 @@ const KEY = 'housing-time-map-v8-differentiated';
 
 let listings = [], story = {}, session = null, screen = 'intro', selected = null, filter = { query: '', region: '전체', type: '전체', budget: '전체', area: '전체', sort: 'price', view: 'all' }, map = null, markers = null, markerLayers = [], mapArea = '서울·경기·인천', mapState = null, visibleCount = 18, moreNews = true, activeTab = 'all', toastHandle;
 
+// Presentation choices are independent of the simulation and its calculations.
+let classroomUI = { news: {}, reasons: {} };
+
+const newsIsOpen = key => Boolean(classroomUI.news[`${session.year}:${key}`]);
+const decisionReason = () => classroomUI.reasons[session.year] || 'rate';
+
 const personalities = [
   {
     id: 'earn',
@@ -102,7 +108,7 @@ const displayRate = v => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(2)}%p`;
 
 function save() {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ session, screen, selected, filter, moreNews }));
+    localStorage.setItem(KEY, JSON.stringify({ session, screen, selected, filter, moreNews, classroomUI }));
   } catch (e) {
     console.warn(e);
   }
@@ -117,6 +123,7 @@ function restore() {
       selected = s.selected;
       filter = { ...filter, ...s.filter };
       moreNews = s.moreNews ?? true;
+      classroomUI = { news: s.classroomUI?.news || {}, reasons: s.classroomUI?.reasons || {} };
       return true;
     }
   } catch { }

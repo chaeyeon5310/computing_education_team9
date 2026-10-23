@@ -11,18 +11,16 @@ function basisEvidenceHtml(h) {
   const diff = (a, b) => b ? (a - b) / b * 100 : 0;
   return `<div class="evidence-block">\
 <div class="evidence-head">\
-<b>이 매물을 판단할 때 확인할 근거</b>\
+<b>매물 비교 정보</b>\
 </div>
  <div class="evidence-grid">
   <div>\
 <small>실제 · 2020년 거래 표본</small>\
 <b>${h.tradeCount}건</b>\
-<em>동일 표본 기준</em>\
 </div>
   <div>\
 <small>실제 출발가 · 2020년 1~9월</small>\
 <b>${won(h.basePrice)}</b>\
-<em>원본 실거래 중앙값</em>\
 </div>
   <div>\
 <small>참고 · 표본 내 유사 면적 중앙값</small>\
@@ -51,15 +49,12 @@ function basisEvidenceHtml(h) {
 function introHtml() {
   return `<section class="intro-wrap">\
 <div class="intro-hero">\
-<span class="eyebrow">HOUSING DECISION LAB · V8</span>\
 <h1>집을 찾는 것처럼,<br>\
 <em>부동산 시장을 플레이하다.</em>\
 </h1>\
-<p>지도에서 매물을 비교하고, 매년 시장 뉴스를 읽고, 집을 살지 팔지 결정하세요.<br>2020년 실제 실거래가격을 출발점으로 하는 <strong>가상 7년 투자 게임</strong>입니다.</p>\
+<p>뉴스와 매물을 비교하며 2020~2026년의 투자 결정을 내려보세요.</p>\
 <div class="hero-pills">\
 <span>실제 아파트 위치 610곳</span>\
-<span>전용면적·가격·연식 다양</span>\
-<span>매년 뉴스 6개 이상</span>\
 <span>미래 가격 비공개</span>\
 </div>\
 </div>\
@@ -78,7 +73,6 @@ function introHtml() {
 </button>`).join('')}</div>\
 <button class="main-button" data-action="start">2020년 부동산 탐색 시작 <span>↗</span>\
 </button>\
-<p class="origin">계정이나 서버 저장은 필요 없습니다.</p>\
 </div>\
 <div class="intro-right">\
 <div class="intro-caption">게임 화면 미리보기</div>\
@@ -221,7 +215,6 @@ function newsHtml() {
 <div>\
 <span class="eyebrow">${session.year} · 종합 부동산 브리핑</span>\
 <h2>${safe(d.title)}</h2>\
-<p class="market-explainer"><b>금리·거래·공급·미분양·전세</b>를 함께 보세요.</p>\
 </div>\
 <div class="news-controls">\
 <button class="small-outline" data-action="news-toggle">${moreNews ? '뉴스 접기' : '모든 뉴스 보기'} ${moreNews ? '⌃' : '⌄'}</button>\
@@ -358,7 +351,7 @@ function detailHtml(h) {
   if (!h) return `<div class="map-placeholder">\
 <span>⌖</span>\
 <b>지도에서 매물을 선택하세요</b>\
-<p>가격 핀 또는 왼쪽 매물 카드를 눌러 상세 정보를 확인할 수 있어요.</p>\
+<p>지도나 목록에서 매물을 선택하세요.</p>\
 </div>`;
   const price = valueAt(h, session.year), hist = historyFor(h, session.year), growth = (price / valueAt(h, Math.max(2020, session.year - 1)) - 1) * 100;
   const ev = localEvent(h), q = quote(h), owned = session.houseId === h.id;
@@ -390,7 +383,7 @@ function detailHtml(h) {
 </div>\
 <div class="detail-graph">\
 <div class="graph-heading">\
-<strong>현재까지 공개된 가격 흐름</strong>\
+<strong>연도별 가격</strong>\
 <small>미래 가격은 비공개</small>\
 </div>${lineChart(hist)}<div class="chart-years">\
 <span>${hist[0].year}년</span>\
@@ -399,7 +392,6 @@ function detailHtml(h) {
 </div>${localProjectInfoHtml(h)}${ev ? `<div class="area-insight">\
 <b>생활권 정보 · ${safe(ev.topic)}</b>\
 <p>${safe(ev.headline)}</p>\
-<small>올해의 영향은 다른 변수와 결합되어 가격에 반영됨</small>\
 </div>`: ''}${basisEvidenceHtml(h)}${session.year > 2020 ? `<div class="price-reasons">\
 <b>올해 게임 내 가격 변동 원인\
 </b>${componentsFor(h, session.year).filter(x => Math.abs(x.value) > .00005).map(x => `<div>\
@@ -451,7 +443,7 @@ function decisionHtml() {
 <h3>${safe(p.lastDecision || '올해 선택 완료')}</h3>\
 <p>다음 해에는 새 시장 지표와 가상 거래가격이 공개됩니다.</p>\
 </div>\
-<button class="main-button" data-action="advance">${p.year === 2026 ? '최종 결과 · 선택 이유 분석 보기' : '다음 연도 결과 보기 →'}</button>\
+<button class="main-button" data-action="advance">${p.year === 2026 ? '최종 결과 보기' : '다음 연도 결과 보기 →'}</button>\
 </div>`;
   return `<div class="decision-bar">\
 <div class="decision-context">\
@@ -459,7 +451,7 @@ function decisionHtml() {
 <h3>${held ? '보유할까, 팔까, 갈아탈까?' : '어느 집을 살까, 기다릴까?'}</h3>\
 <p>${held ? safe(held.name) + ' 보유 · 대출 ' + briefWon(p.loan) : '매물을 비교한 후 매수 또는 관망을 선택해 보세요.'} <span class="cash-alert">${cashEmergency() ? '※ 현금 여유가 적어요.' : ''}</span>\
 </p>\
-<label class="reason-picker">올해 내 판단의 핵심 근거 <select id="decision-reason">${Object.entries(EXPLANATION_CATEGORIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>\
+<label class="reason-picker">선택 이유 <select id="decision-reason">${Object.entries(EXPLANATION_CATEGORIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>\
 </label>\
 </div>\
 <div class="decision-buttons">${held ? `<button data-action="hold" class="decision-btn">⌂ 계속 보유</button>\
@@ -500,7 +492,6 @@ function appHtml() {
   return `${topHtml()}${passageHtml()}${newsHtml()}<section class="market-section">\
 <div class="market-heading">\
 <div>\
-<span class="eyebrow">MAP · PROPERTY SEARCH</span>\
 <h2>지도에서 매물 찾기</h2>\
 </div>\
 </div>${marketToolbar()}<div class="map-layout">${listingPanel()}${mapContent()}</div>\
@@ -535,15 +526,13 @@ function explainHoldingHtml(log) {
 <span>${safe(f.label)}</span>\
 <b>${displayRate(f.value)}</b>\
 </div>`).join('')}</div>\
-<small>시장 상한·다른 요인까지 합친 전체 분해는 매물 상세에서 볼 수 있습니다.</small>\
 </div>`;
 }
 
 function annualDecisionReview() {
   return `<section class="final-audit">\
-<div class="section-eyebrow">DECISION JOURNAL</div>\
 <h3>매년 무엇을 보고 선택했나?</h3>\
-<p>선택 당시 알 수 있었던 정보와 다음 해에 드러난 결과는 구분해야 합니다. 사후에 맞았다고 당시 선택이 반드시 옳았던 것도, 틀렸다고 비합리적이었던 것도 아닙니다.</p>
+<p>결과를 보기 전, 내 선택의 근거는 타당했나요?</p>
  <div class="audit-timeline">${(session.yearly || []).map((d, i) => {
     const passage = (session.passages || []).find(x => x.from === d.year);
     const premise = d.reason || '기록되지 않음', h = byId(d.houseId);
@@ -564,8 +553,7 @@ function finalAuditHtml() {
   const l = ledgerSummary(), holding = (session.passages || []).filter(x => x.heldId);
   const counterfactual = session.initialCash + Array.from({ length: 6 }, (_, i) => savingsForYear(2020 + i) - rentForYear(2020 + i)).reduce((a, b) => a + b, 0);
   return `<section class="final-audit">\
-<div class="section-eyebrow">PERFORMANCE ATTRIBUTION</div>\
-<h3>집값 말고, 실제 게임 자산은 왜 변했나?</h3>\
+<h3>순자산 변동 내역</h3>\
 <p>매년의 가격 변동, 이자, 주거비, 거래비용을 구분한 <b>게임 내부 회계</b>입니다.</p>
  <div class="audit-ledger">\
 <div>\
@@ -573,7 +561,7 @@ function finalAuditHtml() {
 <b>${won(session.initialCash)}</b>\
 </div>\
 <div>\
-<span>6년간 저축 (페르소나별 소득 성장 가정)</span>\
+<span>누적 저축</span>\
 <b class="up">${won(l.saved)}</b>\
 </div>\
 <div>\
@@ -616,7 +604,6 @@ function marketDifferenceHtml() {
   }
   const rate = h => (valueAt(h, 2026) / valueAt(h, 2020) - 1) * 100;
   return `<section class="final-audit">\
-<div class="section-eyebrow">MARKET DIVERGENCE</div>\
 <h3>같은 7년, 모든 집이 똑같이 움직이지 않았어요</h3>\
 <p>어느 단지가 더 많이 움직였는지, 왜 그랬는지 위의 연간 요인 분해와 함께 확인하세요.</p>\
 <div class="v8-market-compare">${sampled.map(h => `<div>\
@@ -631,7 +618,6 @@ function finalHtml() {
   return `<section class="end-screen">\
 <span class="eyebrow">2020 — 2026 · YOUR DECISIONS</span>\
 <h1>7년간의 선택, 그 이유까지 분석합니다.</h1>\
-<p>최종 금액만이 아니라 어느 해에 어떤 변수가 영향을 주었는지 되짚어 보세요.</p>\
 <div class="final-metrics">\
 <div>\
 <small>최종 순자산</small>\

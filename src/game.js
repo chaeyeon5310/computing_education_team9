@@ -6,6 +6,7 @@
 
 
 function render(keep = false) {
+  const scrollY = window.scrollY;
   if (map) {
     mapState = { center: map.getCenter(), zoom: map.getZoom() };
     map.off();
@@ -15,7 +16,8 @@ function render(keep = false) {
   const el = $('#app');
   document.body.classList.toggle('game-active', screen === 'game');
   el.innerHTML = screen === 'intro' ? introHtml() : screen === 'finish' ? finalHtml() : appHtml();
-  if (screen === 'game') initMap();
+  if (screen === 'game' && $('#map')) initMap();
+  window.scrollTo({ top: scrollY, behavior: 'instant' });
   syncDecisionDock();
   syncNewsToggle();
   save();
@@ -44,14 +46,17 @@ function initialGame(profile) {
   mapState = null;
   visibleCount = 18;
   moreNews = true;
-  classroomUI = { news: {}, reasons: {} };
+  classroomUI = { news: {}, reasons: {}, choices: {}, policyRead: {}, showMap: false };
   render();
   window.scrollTo({ top: 0 });
 }
 
 function decision(action, target) {
   if (session.phase !== 'decision') return;
+  if (!classroomUI.policyRead?.[session.year]) return toast('올해 금리와 대출 한도를 먼저 확인해 주세요.');
+  if (!EXPLANATION_CATEGORIES[classroomUI.reasons[session.year]]) return toast('선택 이유를 먼저 골라주세요.');
   const y = session.year, p = session, prior = byId(p.houseId);
+  if (!['hold', 'sell', 'buy'].includes(action)) return;
   let description = '';
   if (action === 'hold') description = prior ? '보유 유지' : '현금 보유 · 매수 대기';
   if (action === 'sell') {
@@ -88,8 +93,7 @@ function decision(action, target) {
   }
   p.lastDecision = description;
   p.phase = 'reveal';
-  const reasonEl = $('#decision-reason');
-  const reason = EXPLANATION_CATEGORIES[reasonEl?.value] || '기록되지 않음';
+  const reason = EXPLANATION_CATEGORIES[classroomUI.reasons[y]] || '기록되지 않음';
   p.yearly.push({ year: y, decision: description, reason, worth: assets(), cash: p.cash, houseId: p.houseId });
   save();
   render();
@@ -97,11 +101,16 @@ function decision(action, target) {
 }
 
 function advance() {
+  if (session.phase === 'decision') {
+    const choice = classroomUI.choices?.[session.year];
+    if (!choice || !classroomUI.reasons[session.year]) return toast('보유 또는 매도와 선택 이유를 골라주세요.');
+    decision(choice);
+  }
   if (session.phase !== 'reveal') return;
   if (session.year === 2026) {
     screen = 'finish';
     render();
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
     return;
   }
   const y = session.year, oldWorth = assets(), oldHouse = byId(session.houseId);
@@ -150,7 +159,9 @@ function advance() {
   session.passages.push(session.lastPassage);
   visibleCount = 18;
   render();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('#annual-policy')?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+  classroomUI.pendingPolicyFocus = true;
+  modal(`${y + 1}년 결과`, `<div class="round-result"><h3>${forcedSale ? '현금이 부족해 집이 매도됐어요.' : '다음 라운드가 열렸어요!'}</h3><p>${oldHouse ? safe(oldHouse.name) + ': ' + won(oldPrice) + ' → ' + won(valueAt(oldHouse, y + 1)) : '현금을 보유하며 다음 매수 기회를 기다렸어요.'}</p><p>순자산 변화 <b>${won(session.lastPassage.delta)}</b></p><p>저축 ${won(saved)} · 주거비 ${won(yearlyRent)} · 대출 상환 ${won(paid)}</p>${oldHouse ? '<p>집값 변화 요인: ' + componentsFor(oldHouse, y + 1).map(f => safe(f.label) + ' ' + displayRate(f.value)).join(' / ') + '</p>' : ''}<button class="main-button" data-action="close-modal">이어서 선택하기</button></div>`);
   toast(forcedSale ? `현금이 부족해 ${y + 1}년 주택이 강제 매도됐습니다.` : `${y + 1}년입니다. 보유 자산 변화 ${won(session.lastPassage.delta)}`);
 }
 
@@ -166,46 +177,5 @@ function openBuy(id) {
   const q = quote(h);
   selected = id;
   updateSelectedUI();
-  const stress = savingsForYear(session.year) - q.month * 12;
-  modal(q.old ? '갈아타기 검토' : '매수 자금 검토', `<div class="quote-name">${safe(h.name)}</div>\
-<div class="quote-rows">\
-<div>\
-<span>올해 매수가</span>\
-<b>${won(q.price)}</b>\
-</div>${q.old ? `<div>\
-<span>기존 주택 매도 후 순유입</span>\
-<b>${won(q.saleProceeds)}</b>\
-</div>`: ''}<div>\
-<span>취득·중개 등 가상 거래비용(2.5%)</span>\
-<b>${won(q.fee)}</b>\
-</div>\
-<div>\
-<span>필요한 대출</span>\
-<b>${won(q.needLoan)}</b>\
-</div>\
-<div>\
-<span>가능한 대출 상한</span>\
-<b>${won(q.limit)}</b>\
-</div>\
-<div>\
-<span>필요 자기자금 (대출한도 기준)</span>\
-<b>${won(q.ownNeeded)}</b>\
-</div>${q.can ? '' : `<div>\
-<span>지금 부족한 자기자금</span>\
-<b>${won(q.shortfall)}</b>\
-</div>`}<div>\
-<span>예상 월 납입액</span>\
-<b>${won(q.month)}</b>\
-</div>\
-<div>\
-<span>연 저축 가능액 − 연 원리금</span>\
-<b class="${stress < 0 ? 'down' : 'up'}">${won(stress)}</b>\
-</div>\
-<div>\
-<span>매수 후 남는 현금</span>\
-<b>${won(q.remaining)}</b>\
-</div>\
-</div>\
-<div class="quote-status ${q.can ? 'ok' : 'fail'}">${q.can ? '예산 조건 충족' : `지금은 ${won(q.shortfall)} 부족 · 이후 저축/기존 주택 매도 후 재도전`}</div>\
-<p class="quote-help">매년 현금이 부족해지면 강제 매도가 발생할 수 있습니다.</p>${q.can ? `<button class="main-button" data-action="confirm-buy" data-id="${safe(id)}">${q.old ? '갈아타기' : '매수'} 확정 →</button>` : '<button class="small-outline" data-action="close-modal">다른 매물 찾기</button>'}`);
+  modal(q.old ? '다른 집으로 갈아타기' : '매수 전 예산 확인', `<div class="quote-name">${safe(h.name)}</div><div class="quote-rows"><div><span>집값</span><b>${won(q.price)}</b></div>${q.old ? `<div><span>지금 집을 팔고 대출을 갚으면</span><b>${won(q.saleProceeds)}</b></div>` : ''}<div><span>빌릴 돈</span><b>${won(q.needLoan)}</b></div><div><span>매달 갚을 돈</span><b>${won(q.month)}</b></div><div><span>거래 후 남는 현금</span><b>${won(q.remaining)}</b></div></div><div class="quote-status ${q.can ? 'ok' : 'fail'}">${q.can ? '게임 예산 조건을 충족해요.' : `추가 자금 ${won(q.shortfall)}이 필요해요.`}</div><details><summary>예산 계산 규칙</summary><p>매수 비용은 집값의 2.5%, 매도 비용은 1.5%입니다. 대출은 올해 집값의 ${Math.round(yearData().ltv*100)}% 및 연간 상환액이 소득의 30% 이내로 제한하며, 현금 1,500만원을 남깁니다. 대출 상환은 30년 원리금균등 방식입니다.</p></details><p class="quote-help">매년 저축에서 주거비 또는 대출 상환액이 빠집니다. 현금이 부족해지면 보유한 집이 강제 매도될 수 있어요.</p>${q.can ? `<button class="main-button" data-action="confirm-buy" data-id="${safe(id)}">${q.old ? '갈아타기' : '매수'} 확정</button>` : '<button class="small-outline" data-action="close-modal">다른 집 찾기</button>'}`);
 }

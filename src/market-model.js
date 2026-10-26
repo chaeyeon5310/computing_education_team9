@@ -145,39 +145,15 @@ function zoneName(h) {
 }
 
 function componentsFor(h, year) {
-  if (year <= 2020) return [];
-  const region = regionKey(h), zone = zoneName(h), i = year - 2021, d = story.years[String(year)], before = story.years[String(year - 1)];
-  const now = d.regionalStats[region], prev = before.regionalStats[region];
-  const macro = (yearRegionShocks[year]?.[region] ?? 0);
-  const zoneShock = (zoneWeights[zone]?.[i] || 0);
-  const globalTx = clamp(.028 * ratio(now.transactions, prev.transactions), -.028, .028);
-  const credit = clamp(-.008 * (d.rate - before.rate), -.024, .023);
-  const supply = clamp(-.017 * ratio(now.completions, prev.completions), -.015, .017);
-  const rent = clamp(.04 * (d.rentChangePct / 100), -.006, .008);
-  const age = year - h.built;
-  const old = h.built <= 1993 ? 1 : 0, fresh = h.built >= 2012 ? 1 : 0, small = h.area < 60 ? 1 : 0, large = h.area >= 110 ? 1 : 0;
-  const expensive = h.basePrice >= 12e8 ? 1 : 0;
-  const outside = zone === '경기외곽' || zone === '인천서부' || zone === '경기서부' ? 1 : 0;
-  const demandBias = ({ 2021: .022, 2022: -.050, 2023: -.012, 2024: .030, 2025: .040, 2026: .025 }[year] || 0) * ((expensive ? 1.15 : 0) + (large ? .65 : 0) - (small ? .35 : 0));
-  const vintage = old * ({ 2021: .026, 2022: -.032, 2023: -.018, 2024: .045, 2025: .040, 2026: -.015 }[year] || 0) + fresh * ({ 2021: .017, 2022: .018, 2023: .012, 2024: .012, 2025: .015, 2026: .023 }[year] || 0);
-  const peripheral = outside * ({ 2021: .015, 2022: -.034, 2023: -.033, 2024: -.030, 2025: -.030, 2026: .034 }[year] || 0);
-  const weakLiquidity = h.tradeCount < 5 ? ({ 2021: .007, 2022: -.025, 2023: -.008, 2024: -.008, 2025: -.010, 2026: .008 }[year] || 0) : 0;
-  const projects = localProjects(h, year).filter(ev => Math.abs(ev.effect) > .0001);
-  const parts = [
-    { label: '시·도 경기 국면', value: macro, type: 'scenario' },
-    { label: '세부 생활권 수급', value: zoneShock, type: 'zone' },
-    { label: '지역 거래·금리·입주 신호', value: globalTx + credit + supply + rent, type: 'scenario' },
-    { label: '가격대·면적별 선호', value: demandBias, type: 'characteristic' },
-    { label: '준공연도·정비사업 민감도', value: vintage, type: 'characteristic' },
-    { label: '외곽 공급·거래 민감도', value: peripheral, type: 'zone' },
-    { label: '거래 표본 적음 · 유동성', value: weakLiquidity, type: 'characteristic' },
-    ...projects.map(ev => ({ label: ev.title, value: ev.effect, type: 'local' }))
-  ];
-  const raw = parts.reduce((v, p) => v + p.value, 0), cap = clamp(raw, -.310, .320);
-  if (Math.abs(cap - raw) > .00001) parts.push({ label: '극단적 변동 제한', value: cap - raw, type: 'cap' });
-  return parts;
+ if(year<=2020)return [];
+ const d=story.years[String(year)],prev=story.years[String(year-1)],r=regionKey(h),local=localProjects(h,year);
+ const supplyProjects=local.filter(p=>/공급|입주|준공|택지/.test(p.kind+' '+p.title));
+ const demandProjects=local.filter(p=>!supplyProjects.includes(p));
+ const purchase=clamp(-.012*(d.rate-prev.rate)+.10*(d.ltv-prev.ltv),-.06,.06);
+ const demand=(yearRegionShocks[year]?.[r]||0)+(zoneWeights[zoneName(h)]?.[year-2021]||0)+demandProjects.reduce((s,p)=>s+p.effect,0);
+ const supply=clamp(-.035*ratio(neighborhoodSupply(h,year).dong.total,neighborhoodSupply(h,year-1).dong.total),-.04,.04)+supplyProjects.reduce((s,p)=>s+p.effect,0);
+ return [{label:'구매력 · 금리와 대출 한도',value:purchase,type:'scenario'},{label:'수요 · 지역 선호와 생활권 변화',value:demand,type:'zone'},{label:'공급 · 입주와 주변 지역 변화',value:supply,type:'local'}];
 }
-
 
 function explainYear(h, fromYear, toYear) {
   const b = componentsFor(h, toYear), base = valueAt(h, fromYear), next = valueAt(h, toYear);
@@ -222,4 +198,59 @@ function valueAt(h, y) {
 
 function historyFor(h, y) {
   return Array.from({ length: y - 2019 }, (_, i) => ({ year: 2020 + i, value: valueAt(h, 2020 + i) }));
+}
+
+// Reproducible teaching examples, not historical transaction records.
+function practiceTrades(h,year) {
+ const seed=[...h.id].reduce((n,c)=>n+c.charCodeAt(0),0)+year;
+ const center=valueAt(h,year)*(1+((seed%7)-3)*.015);
+ return [.98,1,1.02].map(f=>Math.round(center*f/100000)*100000);
+}
+
+// Authored classroom supply allocation, not actual neighborhood forecasts.
+// Allocate each scenario regional total down an administrative tree so totals agree.
+const classroomSupplyCache = new Map();
+function supplyPath(h) {
+  return [h.region, ...h.district.trim().split(/\s+/), h.dong || '기타 지역'];
+}
+function supplyHash(text) {
+  return [...text].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,7);
+}
+function supplyTree(year) {
+  if (classroomSupplyCache.has(year)) return classroomSupplyCache.get(year);
+  const root={children:new Map(), count:0};
+  for (const h of listings) {
+    let node=root;
+    for (const label of supplyPath(h)) {
+      if(!node.children.has(label)) node.children.set(label,{label,children:new Map(),count:0});
+      node=node.children.get(label);node.count++;
+    }
+  }
+  function allocate(node,total,path) {
+    node.total=total;
+    const children=[...node.children.values()];if(!children.length)return;
+    const weights=children.map(c=>Math.sqrt(c.count)*(0.35+(supplyHash(path+'/'+c.label+':'+year)%170)/100));
+    const sum=weights.reduce((a,b)=>a+b,0);
+    const shares=weights.map(w=>total*w/sum), amounts=shares.map(Math.floor);
+    const order=shares.map((x,i)=>({i,f:x-amounts[i]})).sort((a,b)=>b.f-a.f);
+    for(let left=total-amounts.reduce((a,b)=>a+b,0),i=0;i<left;i++)amounts[order[i].i]++;
+    children.forEach((c,i)=>allocate(c,amounts[i],path+'/'+c.label));
+  }
+  for(const [region,node] of root.children) {
+    const key=region==='서울특별시'?'서울':region==='인천광역시'?'인천':'경기';
+    allocate(node,story.years[String(year)].regionalStats[key].completions,region);
+  }
+  classroomSupplyCache.set(year,root);return root;
+}
+function neighborhoodSupply(h,year) {
+  let node=supplyTree(year),path=[];
+  const rows=[];
+  for(const name of supplyPath(h)) {
+    node=node.children.get(name);path.push(name);
+    rows.push({name,path:path.join(' '),total:node.total});
+  }
+  const dong=rows.at(-1),district=rows.at(-2);
+  let parent=supplyTree(year);for(const name of supplyPath(h).slice(0,-1))parent=parent.children.get(name);
+  const nearby=[...parent.children.values()].filter(n=>n.label!==dong.name).slice(0,3).map(n=>({name:n.label,total:n.total}));
+  return {rows,dong,district,nearby};
 }

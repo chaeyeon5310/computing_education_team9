@@ -49,6 +49,7 @@ $('#app').addEventListener('click', e => {
   const button = e.target.closest('[data-action]');
   if (!button) return;
   const a = button.dataset.action, id = button.dataset.id;
+  if (a === 'policy-focus') { $('#annual-policy')?.scrollIntoView({behavior:'smooth',block:'start'}); $('#policy-read')?.focus({preventScroll:true}); return; }
   if (a === 'start') {
     initialGame(session?.profile?.id ? session.profile : personalities[0]);
     return;
@@ -62,8 +63,9 @@ $('#app').addEventListener('click', e => {
     updateSelectedUI();
     return;
   }
-  if (a === 'close-detail') {
+  if (a === 'close-detail' || a === 'back-list') {
     selected = null;
+    classroomUI.sidebarMode = 'list';
     updateSelectedUI();
     return;
   }
@@ -84,6 +86,7 @@ $('#app').addEventListener('click', e => {
     return;
   }
   if (a === 'filter-reset') {
+    selected = null; classroomUI.sidebarMode = 'list';
     filter = { query: '', region: '전체', type: '전체', budget: '전체', area: '전체', sort: 'price', view: 'all' };
     visibleCount = 18;
     render(true);
@@ -95,6 +98,7 @@ $('#app').addEventListener('click', e => {
     return;
   }
   if (a === 'buy') {
+    if (!classroomUI.reasons[session.year]) { toast('아래에서 선택 이유를 먼저 골라주세요.'); $('#decision-reason')?.focus(); return; }
     openBuy(id);
     return;
   }
@@ -103,21 +107,13 @@ $('#app').addEventListener('click', e => {
     $('#modal').close();
     return;
   }
-  if (a === 'sell') {
-    modal('주택 매도 확인', `<p>현재 보유한 <b>${safe(byId(session.houseId)?.name)}</b>을(를) 게임상 현재가로 매도합니다.</p>\
-<p>매도 거래비용 1.5%와 대출잔액이 차감됩니다.</p>\
-<button class="main-button" data-action="confirm-sell">매도 확정</button>`);
-    return;
+  if (a === 'sell' || a === 'hold') {
+    if (session.phase !== 'decision' || a === 'sell' && !session.houseId) return;
+    classroomUI.choices[session.year] = a;
+    refreshDecisionDock(); save(); return;
   }
-  if (a === 'confirm-sell') {
-    decision('sell');
-    $('#modal').close();
-    return;
-  }
-  if (a === 'hold') {
-    decision('hold');
-    return;
-  }
+  if (a === 'map-toggle') { classroomUI.showMap = !classroomUI.showMap; render(true); return; }
+  if (a === 'map-reset') { fitMatchingHomes(); return; }
   if (a === 'advance') {
     advance();
     return;
@@ -139,8 +135,10 @@ $('#app').addEventListener('click', e => {
 
 $('#app').addEventListener('change', e => {
   const t = e.target;
+  if (t.id === 'policy-read') { classroomUI.policyRead = classroomUI.policyRead || {}; classroomUI.policyRead[session.year] = t.checked; refreshDecisionDock(); save(); return; }
   if (t.id === 'decision-reason') {
     classroomUI.reasons[session.year] = t.value;
+    refreshDecisionDock();
     save();
     return;
   }
@@ -148,6 +146,7 @@ $('#app').addEventListener('change', e => {
   if (!k || screen !== 'game') return;
   filter[k] = k === 'view' ? (t.checked ? 'map' : 'all') : t.value;
   visibleCount = 18;
+  selected = null; classroomUI.sidebarMode = 'list';
   render(true);
 });
 
@@ -170,21 +169,12 @@ function syncNewsToggle() {
 
 let dockObserver;
 function syncDecisionDock() {
-  dockObserver?.disconnect();
-  const dock = $('.decision-dock');
-  const update = () => {
-    const height = dock ? Math.ceil(dock.getBoundingClientRect().height) + 20 : 0;
-    document.documentElement.style.setProperty('--decision-dock-space', `${height}px`);
-  };
-  update();
-  if (dock) {
-    dockObserver = new ResizeObserver(update);
-    dockObserver.observe(dock);
-  }
+ dockObserver?.disconnect();
+ document.documentElement.style.setProperty('--decision-dock-space','0px');
 }
 
 function refreshDecisionDock() {
-  const dock = $('.decision-dock');
+  const dock = $('.inline-decision');
   if (!dock || screen !== 'game') return;
   dock.outerHTML = decisionHtml();
   syncDecisionDock();
@@ -193,6 +183,7 @@ function refreshDecisionDock() {
 $('#app').addEventListener('input', e => {
   if (e.target.id !== 'search' || screen !== 'game') return;
   filter.query = e.target.value;
+  if (selected || classroomUI.sidebarMode === 'decision') { selected = null; classroomUI.sidebarMode = 'list'; updateSelectedUI(); }
   visibleCount = 18;
   refreshListingsOnly();
   paintMarkers();
@@ -226,3 +217,10 @@ $('#reset-link').addEventListener('click', () => {
 });
 
 boot();
+
+// Closing the round result leaves the player at the new annual policy.
+$('#modal').addEventListener('close', () => {
+ if (!classroomUI.pendingPolicyFocus) return;
+ classroomUI.pendingPolicyFocus = false;
+ $('#annual-policy')?.scrollIntoView({block:'start',behavior:'instant'});
+});

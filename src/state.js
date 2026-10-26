@@ -27,12 +27,12 @@ const safe = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<'
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-const KEY = 'housing-time-map-v8-differentiated';
+const KEY = 'housing-time-classroom-v3';
 
 let listings = [], story = {}, session = null, screen = 'intro', selected = null, filter = { query: '', region: '전체', type: '전체', budget: '전체', area: '전체', sort: 'price', view: 'all' }, map = null, markers = null, markerLayers = [], mapArea = '서울·경기·인천', mapState = null, visibleCount = 18, moreNews = true, activeTab = 'all', toastHandle;
 
 // Presentation choices are independent of the simulation and its calculations.
-let classroomUI = { news: {}, reasons: {} };
+let classroomUI = { news: {}, reasons: {}, choices: {}, policyRead: {}, showMap: false };
 
 const newsIsOpen = key => Boolean(classroomUI.news[`${session.year}:${key}`]);
 const decisionReason = () => classroomUI.reasons[session.year] || 'rate';
@@ -43,7 +43,7 @@ const personalities = [
     tag: '고소득 · 적은 종잣돈',
     name: '김하린',
     age: 30,
-    job: 'IT 직장인 · 판교',
+    job: '앱 개발자 · 판교 테크노밸리',
     income: 155000000,
     cash: 170000000,
     growth: .065,
@@ -56,7 +56,7 @@ const personalities = [
     tag: '종잣돈 · 낮은 소득',
     name: '윤민서',
     age: 31,
-    job: '연구직 · 광화문',
+    job: '연구원 · 광화문 연구소',
     income: 73000000,
     cash: 480000000,
     growth: .025,
@@ -69,7 +69,7 @@ const personalities = [
     tag: '맞벌이 · 중간형',
     name: '이현우',
     age: 32,
-    job: '맞벌이 가구 · 여의도',
+    job: '맞벌이 · 여의도 금융회사',
     income: 118000000,
     cash: 310000000,
     growth: .045,
@@ -100,9 +100,7 @@ const ratio = (a, b) => b > 0 ? (a - b) / b : 0;
 
 // v7 AUDIT: coefficients are education-only scenario assumptions, NOT empirically estimated elasticities.
 // Research supports investigating rates / supply / credit, not any precise coefficient below.
-const EXPLANATION_CATEGORIES = {
-  rate: '금리', transactions: '거래량', supply: '입주·미분양', rent: '전월세', location: '지역·입지', finance: '자금·위험 관리'
-};
+const EXPLANATION_CATEGORIES = { finance: '구매력 · 내 예산', demand: '수요 · 입지', supply: '입주예정 물량', trend: '가격 흐름', trades: '거래 사례 비교', rate: '금리 · 대출 규제' };
 
 const displayRate = v => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(2)}%p`;
 
@@ -123,7 +121,7 @@ function restore() {
       selected = s.selected;
       filter = { ...filter, ...s.filter };
       moreNews = s.moreNews ?? true;
-      classroomUI = { news: s.classroomUI?.news || {}, reasons: s.classroomUI?.reasons || {} };
+      classroomUI = { news: s.classroomUI?.news || {}, reasons: s.classroomUI?.reasons || {}, choices: s.classroomUI?.choices || {}, policyRead: s.classroomUI?.policyRead || {}, sidebarMode: s.classroomUI?.sidebarMode || 'list', showMap: s.classroomUI?.showMap || false };
       return true;
     }
   } catch { }

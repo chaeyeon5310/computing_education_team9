@@ -1,3 +1,4 @@
+let sidebarListScroll = 0;
 /**
  * 지도 및 매물 목록 연결
  * Leaflet 지도 생성, 가격 핀, 매물 선택 및 검색 결과를 관리한다.
@@ -5,14 +6,28 @@
 // Leaflet과 OpenStreetMap을 사용해 실제 단지 좌표에 마커를 배치합니다.
 
 
-function initMap() {
+async function initMap() {
+  const element = $('#map');
+  if (!element) return;
+  if (window.HOUSING_MAP?.kakaoJavaScriptKey) {
+    try {
+      await loadKakaoSDK();
+      if (!element.isConnected) return;
+      initKakaoMap(); return;
+    } catch (error) {
+      if (!element.isConnected) return;
+      toast('카카오 지도 연결을 확인해 주세요. 기본 지도로 표시합니다.');
+    }
+  }
   if (typeof L === 'undefined') {
     $('#map').innerHTML = '<div class="map-error">지도 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>';
     return;
   }
-  map = L.map('map', { zoomControl: true, scrollWheelZoom: true, preferCanvas: true }).setView(mapState?.center || [37.535, 127.030], mapState?.zoom || 10);
+  map = L.map('map', { zoomControl: true, scrollWheelZoom: false, preferCanvas: true }).setView(mapState?.center || [37.535, 127.030], mapState?.zoom || 10);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
   markers = L.layerGroup().addTo(map);
+  map.on('click', () => map.scrollWheelZoom.enable());
+  map.on('mouseout', () => map.scrollWheelZoom.disable());
   map.on('moveend', () => {
     paintMarkers();
     if (filter.view === 'map') refreshListingsOnly();
@@ -23,6 +38,7 @@ function initMap() {
 
 function paintMarkers() {
   if (!map || !markers) return;
+  if (map.provider === 'kakao') { paintKakaoMarkers(); return; }
   markers.clearLayers();
   const matches = listings.filter(h => {
     const q = filter.query.replace(/\s+/g, '').toLowerCase();
@@ -66,12 +82,15 @@ function paintMarkers() {
 }
 
 function updateSelectedUI() {
-  const d = $('#detail-position');
-  if (d) d.innerHTML = detailHtml(byId(selected));
-  $$('.listing-card').forEach(el => el.classList.toggle('active', el.dataset.id === selected));
-  refreshDecisionDock();
-  paintMarkers();
-  save();
+ const sidebar=$('#property-sidebar'),list=$('#listing-scroll');
+ if(list) sidebarListScroll=list.scrollTop;
+ if(sidebar) sidebar.innerHTML=sidebarContentHtml();
+ $('.lesson-map-layout')?.classList.toggle('sidebar-expanded',Boolean(byId(selected)));
+ refreshDecisionDock();
+ const restored=$('#listing-scroll');
+ if(restored) restored.scrollTop=sidebarListScroll;
+ paintMarkers();
+ save();
 }
 
 function refreshListingsOnly() {
@@ -83,4 +102,68 @@ function refreshListingsOnly() {
   old.scrollTop = y;
   const caption = $('.listing-head p');
   if (caption) caption.innerHTML = `총 <b>${KR.format(matches.length)}</b>개 · 현재 ${session.year}년`;
+  if (!matches.length) old.innerHTML = '<p class="none-found">조건에 맞는 집이 없어요. 조건을 바꿔보세요.</p>';
+}
+
+let kakaoSDKPromise;
+function loadKakaoSDK() {
+  if (window.kakao?.maps?.Map) return Promise.resolve();
+  if (kakaoSDKPromise) return kakaoSDKPromise;
+  kakaoSDKPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => reject(Error('Map SDK timeout')), 8000);
+    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=' + encodeURIComponent(window.HOUSING_MAP.kakaoJavaScriptKey);
+    script.onload = () => {
+      if (!window.kakao?.maps) { clearTimeout(timeout); reject(Error('Invalid map SDK')); return; }
+      window.kakao.maps.load(() => { clearTimeout(timeout); resolve(); });
+    };
+    script.onerror = () => { clearTimeout(timeout); reject(Error('Map SDK failed')); };
+    document.head.append(script);
+  });
+  return kakaoSDKPromise;
+}
+function initKakaoMap() {
+  const K = kakao.maps, center = mapState?.center;
+  const native = new K.Map($('#map'), { center: new K.LatLng(center?.lat || center?.[0] || 37.535, center?.lng || center?.[1] || 127.03), level: Math.max(1, 19 - (mapState?.zoom || 10)) });
+  native.addControl(new K.ZoomControl(), K.ControlPosition.RIGHT);
+  let overlays = [];
+  const idle = () => paintMarkers();
+  map = {
+    provider: 'kakao', native,
+    getCenter: () => ({lat:native.getCenter().getLat(),lng:native.getCenter().getLng()}),
+    getZoom: () => 19 - native.getLevel(),
+    flyTo: (p,z) => { native.setLevel(Math.max(1,19-z)); native.panTo(new K.LatLng(p[0],p[1])); },
+    getBounds: () => ({pad(){return this;},contains(p){return native.getBounds().contain(new K.LatLng(p[0],p[1]));}}),
+    off: () => K.event.removeListener(native,'idle',idle),
+    remove: () => { overlays.forEach(o=>o.setMap(null)); overlays=[]; markers=null; },
+    fit: homes => { const bounds=new K.LatLngBounds(); homes.forEach(h=>bounds.extend(new K.LatLng(h.lat,h.lng))); native.setBounds(bounds); }
+  };
+  markers = { clearLayers: () => { overlays.forEach(o=>o.setMap(null)); overlays=[]; }, add: o => overlays.push(o) };
+  K.event.addListener(native,'idle',idle);
+  paintMarkers();
+}
+function paintKakaoMarkers() {
+  markers.clearLayers();
+  const homes = getMatches().filter(h=>map.getBounds().contains([h.lat,h.lng]));
+  // Only render individual pins at a neighborhood zoom. The list always includes all matches.
+  if (map.getZoom()<12 && homes.length>80) {
+    const groups = new Map();
+    homes.forEach(h=>{const k=h.district; if(!groups.has(k))groups.set(k,[]);groups.get(k).push(h);});
+    groups.forEach(group=>{
+      const h=group[0], button=document.createElement('button'); button.className='cluster-pin';button.textContent=h.district+' '+group.length+'곳';
+      button.onclick=()=>map.fit(group);
+      const overlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(h.lat,h.lng),content:button,map:map.native});markers.add(overlay);
+    }); return;
+  }
+  homes.forEach(h=>{
+    const button=document.createElement('button');button.className='price-pin'+(selected===h.id?' active':'');button.textContent=briefWon(valueAt(h,session.year));button.setAttribute('aria-label',h.name+' '+won(valueAt(h,session.year)));
+    button.onclick=()=>{selected=h.id;updateSelectedUI();};
+    const overlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(h.lat,h.lng),content:button,map:map.native});markers.add(overlay);
+  });
+}
+function fitMatchingHomes() {
+  if (!map) return;
+  const homes=getMatches();if(!homes.length)return toast('조건에 맞는 매물이 없어요.');
+  if(map.provider==='kakao')map.fit(homes);
+  else map.fitBounds(homes.map(h=>[h.lat,h.lng]),{padding:[30,30],maxZoom:14});
 }

@@ -15,12 +15,8 @@ const monthlyPay = (amount, annual, years = 30) => {
 };
 
 function maxLoan(h, y) {
-  const d = story.years[String(y)], price = valueAt(h, y);
-  const ltvRule = price >= 2e9 ? Math.min(d.ltv, .45) : price >= 1.2e9 ? Math.min(d.ltv, .55) : d.ltv;
-  const ltv = price * ltvRule;
-  const monthlyLimit = currentIncome(y) * d.dsr / 12;
-  const annuity1 = monthlyPay(1, annualRate(y));
-  return Math.floor(Math.max(0, Math.min(ltv, monthlyLimit / annuity1)) / 100000) * 100000;
+ const price=valueAt(h,y),monthlyLimit=currentIncome(y)*.30/12;
+ return Math.floor(Math.max(0,Math.min(price*story.years[String(y)].ltv,monthlyLimit/monthlyPay(1,annualRate(y))))/100000)*100000;
 }
 
 function quote(h) {

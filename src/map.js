@@ -36,8 +36,21 @@ async function initMap() {
   paintMarkers();
 }
 
+function mapIsVisible() {
+  const element = $('#map');
+  return Boolean(element && element.clientWidth > 0 && element.clientHeight > 0);
+}
+
+function focusMapHome(h) {
+  // A collapsed mobile map has zero dimensions; flying it can produce NaN coordinates.
+  if (!map || !h || !mapIsVisible()) return;
+  const zoom = Math.max(12, map.getZoom());
+  if (map.provider === 'kakao') map.flyTo([h.lat, h.lng], zoom);
+  else { map.invalidateSize(); map.setView([h.lat, h.lng], zoom, { animate: false }); }
+}
+
 function paintMarkers() {
-  if (!map || !markers) return;
+  if (!map || !markers || !mapIsVisible()) return;
   if (map.provider === 'kakao') { paintKakaoMarkers(); return; }
   markers.clearLayers();
   const matches = listings.filter(h => {
@@ -101,7 +114,9 @@ function refreshListingsOnly() {
   old.innerHTML = matches.slice(0, visibleCount).map(listCard).join('') + (matches.length > visibleCount ? `<button class="show-more" data-action="more">더 보기 ↓</button>` : '');
   old.scrollTop = y;
   const caption = $('.listing-head p');
-  if (caption) caption.innerHTML = `총 <b>${KR.format(matches.length)}</b>개 · 현재 ${session.year}년`;
+  if (caption) caption.textContent = `낮은 가격순 · ${session.year}년 게임 가격`;
+  const heading = $('.listing-head h3');
+  if (heading) heading.textContent = `후보 ${KR.format(matches.length)}곳`;
   if (!matches.length) old.innerHTML = '<p class="none-found">조건에 맞는 집이 없어요. 조건을 바꿔보세요.</p>';
 }
 
@@ -162,7 +177,7 @@ function paintKakaoMarkers() {
   });
 }
 function fitMatchingHomes() {
-  if (!map) return;
+  if (!map || !mapIsVisible()) return;
   const homes=getMatches();if(!homes.length)return toast('조건에 맞는 매물이 없어요.');
   if(map.provider==='kakao')map.fit(homes);
   else map.fitBounds(homes.map(h=>[h.lat,h.lng]),{padding:[30,30],maxZoom:14});

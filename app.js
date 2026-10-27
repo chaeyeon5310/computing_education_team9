@@ -1,226 +1,82 @@
-/**
- * 진입점 및 이벤트 연결
- * 초기 JSON 로드, 사용자 이벤트와 버튼 동작을 연결한다.
- */
-// 시작 파일: 필요한 스크립트가 index.html의 defer 순서대로 먼저 로드됩니다.
-
-
+/** Entry point and accessible UI events. */
 async function boot() {
   try {
-    const [lr, sr] = await Promise.all([fetch('./data/listings.json'), fetch('./data/storyline.json')]);
-    if (!lr.ok || !sr.ok) throw Error('data/ 파일을 읽지 못했어요. Live Server로 실행해 주세요.');
-    const l = await lr.json();
-    story = await sr.json();
-    listings = l.listings;
-    window.__gameMeta = l.meta;
-    window.__houseGameDebug = {
-      valueAt,
-      breakdown,
-      componentsFor,
-      quote,
-      yearRegionShocks,
-      zoneWeights,
-      localProjects,
-      personalities,
-      getListings: () => listings,
-      getSession: () => session,
-      savingsForYear
-    };
-    restore();
-    render();
+    const [lr, sr] = await Promise.all([fetch('./data/listings.json'), fetch('./data/classroom-scenario.json')]);
+    if (!lr.ok || !sr.ok) throw Error('게임 자료를 불러오지 못했어요. 페이지를 새로고침해 주세요.');
+    const l = await lr.json(); story = await sr.json(); listings = l.listings;
+    if (story.meta.startYear !== START_YEAR || story.meta.endYear !== END_YEAR || story.meta.periodMonths !== PERIOD_MONTHS) throw Error('게임과 시나리오의 기간 설정이 다릅니다.');
+    restore(); render();
   } catch (e) {
-    $('#app').innerHTML = `<div class="error">\
-<h2>데이터를 불러올 수 없어요</h2>\
-<p>${safe(e.message)}</p>\
-<p>VS Code에서 index.html을 열고 'Open with Live Server'를 클릭해 주세요.</p>\
-</div>`;
+    $('#app').innerHTML = `<div class="error"><h2>게임을 준비하지 못했어요</h2><p>${safe(e.message)}</p></div>`;
     console.error(e);
   }
 }
-
+function resetGame() {
+  session = null; screen = 'intro'; selected = null; mapState = null; classroomUI = defaultUI(); filter = defaultFilter(); render();
+}
 $('#app').addEventListener('click', e => {
-  const profileEl = e.target.closest('[data-profile]');
-  if (profileEl) {
-    const p = personalities.find(x => x.id === profileEl.dataset.profile);
-    session = { profile: p };
-    $$('.profile-opt').forEach(b => b.classList.toggle('active', b.dataset.profile === p.id));
+  const profile = e.target.closest('[data-profile]');
+  if (profile) {
+    session = { profile: personalities.find(p => p.id === profile.dataset.profile) };
+    $$('.profile-opt').forEach(b => { const active = b.dataset.profile === session.profile.id; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
     return;
   }
-  const button = e.target.closest('[data-action]');
-  if (!button) return;
-  const a = button.dataset.action, id = button.dataset.id;
-  if (a === 'policy-focus') { $('#annual-policy')?.scrollIntoView({behavior:'smooth',block:'start'}); $('#policy-read')?.focus({preventScroll:true}); return; }
-  if (a === 'start') {
-    initialGame(session?.profile?.id ? session.profile : personalities[0]);
-    return;
+  const b = e.target.closest('[data-action]'); if (!b || b.disabled) return;
+  const action = b.dataset.action, id = b.dataset.id;
+  if (action === 'policy-focus') {
+    $('#annual-policy')?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    $('#policy-read')?.focus({ preventScroll: true }); return;
   }
-  if (a === 'select') {
-    selected = id;
-    const h = byId(id);
-    if (map && h) {
-      map.flyTo([h.lat, h.lng], Math.max(12, map.getZoom()), { duration: .55 });
-    }
+  if (action === 'start') initialGame(session?.profile || personalities[0]);
+  if (action === 'select') {
+    selected = id; const h = byId(id);
     updateSelectedUI();
-    return;
+    focusMapHome(h);
   }
-  if (a === 'close-detail' || a === 'back-list') {
-    selected = null;
-    classroomUI.sidebarMode = 'list';
-    updateSelectedUI();
-    return;
+  if (action === 'close-detail' || action === 'back-list') { selected = null; updateSelectedUI(); }
+  if (action === 'more') { visibleCount += 18; refreshListingsOnly(); }
+  if (action === 'filter-reset') { selected = null; filter = defaultFilter(); visibleCount = 18; render(true); }
+  if (action === 'buy') openBuy(id);
+  if (action === 'hold' || action === 'sell') {
+    if (session.phase !== 'decision' || action === 'sell' && !session.houseId) return;
+    classroomUI.choices[session.year] = action; refreshDecisionDock(); save();
   }
-  if (a === 'more') {
-    visibleCount += 18;
-    refreshListingsOnly();
-    return;
-  }
-  if (a === 'news-toggle') {
-    const articles = $$('.news-detail');
-    const expand = articles.some(article => !article.open);
-    for (const article of articles) {
-      article.open = expand;
-      classroomUI.news[article.dataset.newsKey] = expand;
-    }
-    syncNewsToggle();
-    save();
-    return;
-  }
-  if (a === 'filter-reset') {
-    selected = null; classroomUI.sidebarMode = 'list';
-    filter = { query: '', region: '전체', type: '전체', budget: '전체', area: '전체', sort: 'price', view: 'all' };
-    visibleCount = 18;
-    render(true);
-    return;
-  }
-  if (a === 'focus-list') {
-    $('.listing-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
-    $('.market-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-  if (a === 'buy') {
-    if (!classroomUI.reasons[session.year]) { toast('아래에서 선택 이유를 먼저 골라주세요.'); $('#decision-reason')?.focus(); return; }
-    openBuy(id);
-    return;
-  }
-  if (a === 'confirm-buy') {
-    decision('buy', id);
-    $('#modal').close();
-    return;
-  }
-  if (a === 'sell' || a === 'hold') {
-    if (session.phase !== 'decision' || a === 'sell' && !session.houseId) return;
-    classroomUI.choices[session.year] = a;
-    refreshDecisionDock(); save(); return;
-  }
-  if (a === 'map-toggle') { classroomUI.showMap = !classroomUI.showMap; render(true); return; }
-  if (a === 'map-reset') { fitMatchingHomes(); return; }
-  if (a === 'advance') {
-    advance();
-    return;
-  }
-  if (a === 'restart') {
-    session = null;
-    screen = 'intro';
-    selected = null;
-    mapState = null;
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-  if (a === 'guide' || a === 'method') {
-    modal('게임 진행 및 데이터 기준', helpHtml());
-    return;
-  }
+  if (action === 'map-toggle') { classroomUI.showMap = !classroomUI.showMap; render(true); }
+  if (action === 'map-reset') fitMatchingHomes();
+  if (action === 'advance') advance();
+  if (action === 'restart') resetGame();
+  if (action === 'guide' || action === 'method') modal('진행 방법과 자료 기준', helpHtml());
+  if (action === 'review-period') modal('지난 1년 결산', periodResultHtml(session.lastPassage));
 });
-
 $('#app').addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'policy-read') { classroomUI.policyRead = classroomUI.policyRead || {}; classroomUI.policyRead[session.year] = t.checked; refreshDecisionDock(); save(); return; }
-  if (t.id === 'decision-reason') {
-    classroomUI.reasons[session.year] = t.value;
-    refreshDecisionDock();
-    save();
-    return;
-  }
-  const k = t.dataset.filter;
-  if (!k || screen !== 'game') return;
-  filter[k] = k === 'view' ? (t.checked ? 'map' : 'all') : t.value;
-  visibleCount = 18;
-  selected = null; classroomUI.sidebarMode = 'list';
-  render(true);
+  if (t.id === 'policy-read') { classroomUI.policyRead[session.year] = t.checked; refreshDecisionDock(); save(); return; }
+  if (t.dataset.reason) { const reasons = new Set(reasonKeys(classroomUI.reasons[session.year])); if (t.checked) reasons.add(t.dataset.reason); else reasons.delete(t.dataset.reason); classroomUI.reasons[session.year] = [...reasons]; refreshDecisionDock(); save(); return; }
+  if (t.dataset.filter && screen === 'game') { filter[t.dataset.filter] = t.value; visibleCount = 18; selected = null; render(true); }
 });
-
-// Native disclosures expand in place, without rebuilding the map or decision form.
 $('#app').addEventListener('toggle', e => {
-  const article = e.target;
-  if (!article.matches('.news-detail') || !article.isConnected) return;
-  classroomUI.news[article.dataset.newsKey] = article.open;
-  syncNewsToggle();
-  save();
+  const a = e.target;
+  if (a.matches('.news-detail') && a.isConnected) { classroomUI.news[a.dataset.newsKey] = a.open; save(); }
 }, true);
-
-function syncNewsToggle() {
-  const button = $('[data-action="news-toggle"]');
-  if (!button) return;
-  const articles = $$('.news-detail');
-  const allOpen = articles.length > 0 && articles.every(article => article.open);
-  button.textContent = allOpen ? '모두 접기 ⌃' : '모두 펼치기 ⌄';
-}
-
-let dockObserver;
-function syncDecisionDock() {
- dockObserver?.disconnect();
- document.documentElement.style.setProperty('--decision-dock-space','0px');
-}
-
-function refreshDecisionDock() {
-  const dock = $('.inline-decision');
-  if (!dock || screen !== 'game') return;
-  dock.outerHTML = decisionHtml();
-  syncDecisionDock();
-}
-
 $('#app').addEventListener('input', e => {
   if (e.target.id !== 'search' || screen !== 'game') return;
-  filter.query = e.target.value;
-  if (selected || classroomUI.sidebarMode === 'decision') { selected = null; classroomUI.sidebarMode = 'list'; updateSelectedUI(); }
-  visibleCount = 18;
-  refreshListingsOnly();
-  paintMarkers();
-  save();
+  filter.query = e.target.value; visibleCount = 18;
+  if (selected) { selected = null; updateSelectedUI(); }
+  refreshListingsOnly(); paintMarkers(); save();
 });
-
+function syncNewsToggle() {}
+function syncDecisionDock() {
+  document.documentElement.style.setProperty('--decision-dock-space', '0px');
+}
+function refreshDecisionDock() {
+  const dock = $('.inline-decision'); if (dock && screen === 'game') dock.outerHTML = decisionHtml();
+}
 $('#modal').addEventListener('click', e => {
   if (e.target === $('#modal')) $('#modal').close();
-  const b = e.target.closest('[data-action]');
-  if (b?.dataset.action === 'close-modal') $('#modal').close();
-  if (b?.dataset.action === 'confirm-buy') {
-    decision('buy', b.dataset.id);
-    $('#modal').close();
-  }
-  if (b?.dataset.action === 'confirm-sell') {
-    decision('sell');
-    $('#modal').close();
-  }
+  const b = e.target.closest('[data-action]'); if (!b || b.disabled) return;
+  if (b.dataset.action === 'close-modal') $('#modal').close();
+  if (b.dataset.action === 'confirm-buy' && decision('buy', b.dataset.id)) $('#modal').close();
 });
-
-$('#help-link').addEventListener('click', () => modal('게임 진행 및 데이터 기준', helpHtml()));
-
-$('#reset-link').addEventListener('click', () => {
-  if (confirm('진행하던 게임을 초기화할까요?')) {
-    session = null;
-    screen = 'intro';
-    mapState = null;
-    selected = null;
-    render();
-  }
-});
-
+$('#help-link').addEventListener('click', () => modal('진행 방법과 자료 기준', helpHtml()));
+$('#reset-link').addEventListener('click', () => { if (confirm('진행하던 게임을 초기화할까요?')) resetGame(); });
 boot();
-
-// Closing the round result leaves the player at the new annual policy.
-$('#modal').addEventListener('close', () => {
- if (!classroomUI.pendingPolicyFocus) return;
- classroomUI.pendingPolicyFocus = false;
- $('#annual-policy')?.scrollIntoView({block:'start',behavior:'instant'});
-});

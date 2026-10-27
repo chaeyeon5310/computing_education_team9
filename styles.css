@@ -998,6 +998,11 @@ a {
 }
 
 .detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
   border: 0;
   background: #edf4ef;
   color: #587568;
@@ -1302,6 +1307,11 @@ dialog::backdrop {
 }
 
 .modal-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
   background: #eff5f1;
   border: 0;
   border-radius: 8px;
@@ -3230,3 +3240,80 @@ button svg { display: block; flex-shrink: 0; }
  .trade-footer .inline-decision .purchase-summary { grid-template-columns: 1fr; }
  .trade-footer .inline-decision .decision-buttons > button { flex: 1 1 160px; }
 }
+/* 홈 화면과 뉴스 카드의 크기 조정 */
+.intro-wrap { padding: 24px 24px 36px; }
+.intro-hero h1 { font-size: clamp(30px, 3.2vw, 42px); line-height: 1.22; margin: 8px 0 10px; }
+.intro-hero p { font-size: 15px; line-height: 1.5; margin: 0; }
+.game-rules { padding: 12px 16px; margin: 12px 0; font-size: 15px; line-height: 1.5; }
+.game-rules ol { margin: 6px 0; padding-left: 22px; }
+.game-rules li { padding: 1px 0; }
+.game-rules p { margin: 6px 0 0; }
+.intro-left h2 { font-size: 21px; margin: 0 0 10px; }
+.profile-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.profile-opt { align-content: start; padding: 12px; gap: 4px; }
+.profile-opt strong, .persona-choice-head strong { font-size: 18px; }
+.profile-opt .profile-finance, .profile-opt em { font-size: 14px; line-height: 1.45; }
+.profile-opt .persona-tag { padding: 3px 8px; }
+.intro-left .main-button { margin-top: 12px; }
+.simulation-note { margin: 10px 0 0; line-height: 1.5; }
+.v8-project-news-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.v8-project-news-cards .news-detail summary { padding: 12px 38px 12px 14px; }
+.v8-project-news-cards .news-detail summary strong { font-size: 16px; line-height: 1.45; }
+.news-section { padding-block: 14px; }
+.policy-brief { padding: 16px; margin: 12px 0 16px; }
+.persona-banner { padding: 12px 16px; margin-top: 12px; }
+.asset-summary > div { padding: 12px 16px; }
+@media (max-width: 760px) {
+  .intro-wrap { padding: 20px 16px 32px; }
+  .profile-choices { grid-template-columns: 1fr; }
+  .v8-project-news-cards { grid-template-columns: 1fr; }
+}
+/* 홈 화면: 화면 높이에 맞춰 여유를 배분 */
+@media (min-width: 761px) {
+ .intro-wrap { min-height: calc(100dvh - 130px); display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 1.8vh, 24px); }
+ .intro-wrap .game-rules, .intro-wrap .simulation-note { margin: 0; }
+}
+/* 지난 결과, 이유 선택, 결과 카드 */
+.compact-recap { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.compact-recap .text-button { border:1px solid #a9cab9; border-radius:8px; background:#fff; color:#166b56; padding:8px 14px; font:inherit; font-weight:700; cursor:pointer; }
+.reason-options { border:0; padding:0; margin:16px 0; min-width:0; }
+.reason-options legend { font-weight:700; color:#24483a; margin-bottom:8px; }
+.reason-options legend small { font-weight:400; color:#61786b; font-size:14px; }
+.reason-options > div { display:flex; flex-wrap:wrap; gap:8px; }
+.reason-options label { display:inline-flex; align-items:center; gap:6px; border:1px solid #c6dacf; background:white; border-radius:9px; padding:8px 15px 8px 10px; cursor:pointer; }
+.reason-options label:has(input:checked) { border-color:#148b72; background:#e4f5eb; color:#12624f; }
+.reason-options input { width:18px; height:18px; accent-color:#148b72; }
+.end-screen { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+.completion-summary { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
+.completion-summary span { padding:7px 12px; background:#e4f4eb; color:#17654d; border-radius:20px; font-weight:700; }
+.performance-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:20px 0; }
+.performance-metrics section { padding:20px; background:white; border:1px solid #d4e5da; border-radius:14px; }
+.performance-metrics h3 { font-size:17px; margin:0 0 10px; }
+.performance-metrics strong { font-size:clamp(24px,3vw,32px); }
+.performance-metrics p, .performance-metrics small { display:block; margin:8px 0 0; color:#5c7368; line-height:1.55; }
+.profit-gain { color:#08785b; } .profit-loss { color:#b54d44; } .profit-neutral { color:#51685c; }
+.end-screen .disclosure, .round-result .disclosure { margin:12px 0; padding:12px 15px; background:#fff; border:1px solid #d8e8dc; border-radius:10px; }
+.end-screen .disclosure summary, .round-result .disclosure summary { cursor:pointer; font-weight:700; }
+.finish-account, .reflection { margin:18px 0; padding:16px; background:#eef7f1; border-radius:12px; }
+.review-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+.review-card { padding:18px; background:#fff; border:1px solid #d6e6da; border-radius:12px; }
+.review-card h4 { margin:8px 0; } .review-card p { line-height:1.55; }
+.review-delta { display:flex; justify-content:space-between; gap:10px; padding:10px; background:#f1f8f3; border-radius:8px; }
+.round-result .performance-metrics { margin:14px 0; }
+.end-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+@media (max-width:620px) { .performance-metrics { grid-template-columns:1fr; } .end-screen { padding:24px 16px 40px; } }
+/* 홈 화면: 위아래 여백을 화면 높이에 맞춰 배분 */
+@media (min-width: 761px) and (min-height: 800px) {
+ .intro-wrap { justify-content: space-evenly; gap: clamp(18px, 3vh, 34px); padding-top: 30px; padding-bottom: 30px; }
+}
+/* 결산 창은 여유롭게, 좁은 화면에서는 화면 밖으로 나가지 않도록 */
+#modal { width: min(760px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
+#modal .performance-metrics section { min-width: 0; }
+#modal .performance-metrics strong { font-size: clamp(21px, 2.5vw, 30px); white-space: nowrap; }
+#modal .performance-metrics p, #modal .performance-metrics small { word-break: keep-all; overflow-wrap: break-word; }
+.sale-explanation { margin: 10px 0; padding: 10px 12px; border-radius: 9px; background: #fff5e8; color: #73552f; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+@media (max-width: 520px) { #modal .performance-metrics { grid-template-columns: 1fr; } }
+.review-card { display: flex; flex-direction: column; }
+.review-card .review-savings { margin-top: 14px; }
+.review-card > .disclosure { margin-top: auto; }
+.review-card .sale-explanation { margin: 8px 0; }

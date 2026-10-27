@@ -1,5 +1,7 @@
 /**
- * Housing Classroom — calibrated teaching market model.
+ * Housing Classroom — region-differentiated teaching market model.
+ * 2026–2031년 게임 진행/자산/매매 API 유지. 공급·지역 수요 효과만 강화.
+ * 실제 공식 통계로 추정한 계수가 아니므로 수업용 가상 시나리오로 표시할 것.
  * Browser JavaScript; no Node.js required to play the game.
  * All coefficients are fictional classroom assumptions, not empirical causal estimates.
  * Uses the existing 2026–2031 game timeline without changing transaction logic.
@@ -7,17 +9,17 @@
 const distanceKm = (a, b) => Math.hypot((a[0] - b[0]) * 111, (a[1] - b[1]) * 88);
 
 const MARKET_PARAMETERS = {
-  referenceSupplyRate: { 서울: 1.8, 경기: 2.7, 인천: 2.2 }, // % of housing stock per year
-  baseDemand: { 서울: 0.008, 경기: 0.005, 인천: 0.003 }, // annual rate
+  referenceSupplyRate: { 서울: 2.0, 경기: 2.8, 인천: 2.2 }, // % of housing stock per year
+  baseDemand: { 서울: 0.007, 경기: 0.004, 인천: 0.002 }, // annual rate
   rateCoefficient: -0.012,       // 1 percentage point mortgage-rate change
   ltvCoefficient: 0.08,          // change in ratio (0..1)
   paymentCoefficient: 0.08,      // change in ratio (0..1)
-  demandCoefficient: 0.004,     // one fictional demand step
-  projectCoefficient: 0.22,
-  supplyCoefficient: -0.012,    // 1 percentage-point supply-rate gap
-  supplyWeights: { dong: 0.25, district: 0.45, region: 0.30 },
-  annualFloor: -0.12,
-  annualCeiling: 0.13
+  demandCoefficient: 0.005,     // one fictional demand step
+  projectCoefficient: 0.30,
+  supplyCoefficient: -0.022,    // 1 percentage-point supply-rate gap
+  supplyWeights: { dong: 0.45, district: 0.45, region: 0.10 },
+  annualFloor: -0.17,
+  annualCeiling: 0.19
 };
 
 function localProjects(h, year) {
@@ -46,17 +48,17 @@ function areaDemandPressure(h) {
   const loc = `${h.district || ''} ${h.dong || ''}`;
   const region = regionKey(h);
   if (region === '서울') {
-    if (/강남구|서초구|송파구|용산구|성동구|마포구/.test(loc)) return 0.005;
-    if (/영등포구|동작구|광진구|양천구|중구|종로구/.test(loc)) return 0.0025;
-    return -0.001;
+    if (/강남구|서초구|송파구|용산구|성동구|마포구/.test(loc)) return 0.009;
+    if (/영등포구|동작구|광진구|양천구|중구|종로구/.test(loc)) return 0.003;
+    return -0.004;
   }
   if (region === '경기') {
-    if (/성남시.*분당구|과천시|하남시|광명시|안양시.*동안구/.test(loc)) return 0.004;
-    if (/수원시.*영통구|용인시.*수지구|고양시.*일산|화성시.*동탄|구리시/.test(loc)) return 0.002;
-    return -0.001;
+    if (/성남시.*분당구|과천시|하남시|광명시|안양시.*동안구/.test(loc)) return 0.008;
+    if (/수원시.*영통구|용인시.*수지구|고양시.*일산|화성시.*동탄|구리시/.test(loc)) return 0.0025;
+    return -0.004;
   }
-  if (/연수구|남동구/.test(loc)) return 0.0015;
-  return -0.001;
+  if (/연수구|남동구/.test(loc)) return 0.001;
+  return -0.004;
 }
 
 // 물량 배분은 결정론적이다. 연도가 같으면 모든 학생에게 같은 입주량이 나온다.
@@ -77,13 +79,13 @@ function localityFraction(text) {
 function localSupplyWeight(h, year) {
   const district = `${h.region}|${h.district}`;
   const dong = `${district}|${h.dong || '기타 지역'}`;
-  const districtCycle = 0.7 + 0.65 * localityFraction(`구|${district}|${year}`);
-  const dongCycle = 0.72 + 0.60 * localityFraction(`동|${dong}|${year}`);
+  const districtCycle = 0.48 + 1.35 * localityFraction(`구|${district}|${year}`);
+  const dongCycle = 0.55 + 1.20 * localityFraction(`동|${dong}|${year}`);
   const projects = localProjects(h, year).filter(p => p.kind === '공급');
   const pressure = projects.reduce(
     (sum, p) => sum + Math.max(0, p.proximity * (p.supplyPressure || 0)), 0
   );
-  const projectMultiplier = 1 + clamp(pressure, 0, 1.25);
+  const projectMultiplier = 1 + clamp(pressure, 0, 2.25);
   return districtCycle * dongCycle * projectMultiplier;
 }
 
@@ -109,10 +111,18 @@ function periodComponents(h, fromYear) {
   // 일자리·교통·도심 접근성을 반영하는 고정된 가상 생활권 성향.
   // 미래 시세를 미리 정하는 보정계수가 아니며, 모든 지역이 반드시 상승하는 것은 아니다.
   const areaDemand = areaDemandPressure(h);
+  // 경기 흐름이 동일해도 지역의 직주근접·교통 여건에 따라
+  // 구매 수요 증가와 감소가 다르게 나타나는 가상 교육용 탄력성.
+  // 고정 상승 보너스가 아니라, 연도별 수요 변화에 대한 반응 차이이다.
+  const regionalDemand = Number(regional.demand) || 0;
+  const marketElasticity = areaDemand >= 0.008 ? 1.35 :
+    areaDemand >= 0.002 ? 1.1 : 0.95;
+  const localDemandShift = MARKET_PARAMETERS.demandCoefficient *
+    regionalDemand * marketElasticity;
   const demand = clamp(
     MARKET_PARAMETERS.baseDemand[region] + areaDemand +
-    MARKET_PARAMETERS.demandCoefficient * regional.demand + projectDemand,
-    -0.045, 0.055
+    localDemandShift + projectDemand,
+    -0.070, 0.085
   );
 
   // Blending avoids treating the distribution of the sample listings as true dong-level housing stock.
@@ -125,7 +135,7 @@ function periodComponents(h, fromYear) {
   const referenceRate = MARKET_PARAMETERS.referenceSupplyRate[region];
   const supply = clamp(
     MARKET_PARAMETERS.supplyCoefficient * (blendedSupplyRate - referenceRate),
-    -0.04, 0.035
+    -0.065, 0.050
   );
 
   return [

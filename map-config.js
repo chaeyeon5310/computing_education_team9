@@ -1,0 +1,1 @@
+window.HOUSING_MAP = { kakaoJavaScriptKey: '5603ad8d78afbf2f73725e0b59b4c240' };

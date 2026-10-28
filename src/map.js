@@ -104,14 +104,6 @@ function updateSelectedUI() {
  if(restored) restored.scrollTop=sidebarListScroll;
  paintMarkers();
  save();
- if (selected && byId(selected)) {
-   const section = $('.market-section');
-   if (section) {
-     const top = Math.max(0, window.scrollY + section.getBoundingClientRect().top - 12);
-     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-     window.scrollTo({ top, behavior: reduceMotion ? 'instant' : 'smooth' });
-   }
- }
 }
 
 function refreshListingsOnly() {

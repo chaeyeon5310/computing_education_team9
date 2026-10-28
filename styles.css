@@ -3317,3 +3317,823 @@ button svg { display: block; flex-shrink: 0; }
 .review-card .review-savings { margin-top: 14px; }
 .review-card > .disclosure { margin-top: auto; }
 .review-card .sale-explanation { margin: 8px 0; }
+
+
+/* ================================================
+   집의 시간 - 반응형 레이아웃 보정
+   기존 styles.css 맨 아래에 추가
+   ================================================ */
+
+/* 1. 공통 화면 크기 및 여백 */
+
+:root {
+  --page-max-width: 1560px;
+  --page-gutter: clamp(16px, 3.5vw, 56px);
+  --section-gap: clamp(16px, 2.4vw, 28px);
+}
+
+html {
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  width: 100%;
+  min-width: 320px;
+}
+
+#app {
+  width: 100%;
+  min-width: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+strong,
+small {
+  overflow-wrap: break-word;
+}
+
+/* 2. 헤더 */
+
+.site-header {
+  height: auto;
+  min-height: 72px;
+  padding: 12px var(--page-gutter);
+  gap: 16px;
+}
+
+.brand {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.brand > span:last-child {
+  min-width: 0;
+}
+
+.site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.site-header nav button {
+  white-space: nowrap;
+}
+
+/* 3. 주요 콘텐츠의 양쪽 여백 */
+
+.game-top,
+.news-section,
+.market-section {
+  width: min(100%, var(--page-max-width));
+  max-width: var(--page-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--page-gutter);
+  padding-right: var(--page-gutter);
+}
+
+.intro-wrap {
+  width: 100%;
+  max-width: 1260px;
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.end-screen {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+/* 4. Grid / Flex 내부 요소가 부모를 넘지 않도록 */
+
+.top-title,
+.top-left,
+.persona-banner,
+.asset-summary,
+.account-details,
+.news-section,
+.market-section,
+.market-toolbar,
+.extra-market-controls,
+.classroom-market,
+.map-layout,
+.lesson-map-layout,
+.trade-footer,
+.performance-metrics,
+.final-metrics {
+  min-width: 0;
+}
+
+.lesson-map-layout > *,
+.classroom-market > *,
+.asset-summary > *,
+.performance-metrics > *,
+.final-metrics > *,
+.v8-project-news-cards > *,
+.profile-choices > * {
+  min-width: 0;
+}
+
+/* 5. 시작 화면 인물 선택 카드 */
+
+.profile-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-opt {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  overflow-wrap: anywhere;
+}
+
+.persona-choice-head,
+.persona-job,
+.persona-tag,
+.profile-finance {
+  min-width: 0;
+}
+
+.intro-hero h1 {
+  overflow-wrap: break-word;
+}
+
+/* 6. 연도 표시 / 자산 요약 */
+
+.top-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.yearline {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 6px;
+}
+
+.yr {
+  flex-shrink: 0;
+}
+
+.persona-banner {
+  flex-wrap: wrap;
+}
+
+.asset-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.asset-summary > div {
+  min-width: 0;
+}
+
+.asset-summary b {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.account-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.account-details span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 7. 뉴스 / 정책 영역 */
+
+.v8-project-news-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.news-detail {
+  min-width: 0;
+}
+
+.news-detail summary strong {
+  overflow-wrap: anywhere;
+}
+
+.policy-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+}
+
+.policy-inline > span {
+  min-width: 0;
+}
+
+.policy-title {
+  flex-wrap: wrap;
+}
+
+/* 8. 검색 및 필터 영역 */
+
+.market-toolbar {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.market-toolbar .search-control {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.market-toolbar .search-control input {
+  min-width: 0;
+  width: 100%;
+}
+
+.market-toolbar select {
+  flex: 0 1 145px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.market-toolbar .reset-filter {
+  flex-shrink: 0;
+}
+
+/* 추가된 매수 가능 여부 / 정렬 필터 */
+
+.extra-market-controls {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 190px), 1fr)
+  );
+  gap: 10px;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+  margin: 10px 0 16px;
+}
+
+.extra-market-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #47665a;
+}
+
+.extra-market-controls select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #d8e3dd;
+  border-radius: 9px;
+  color: #2c4b42;
+  font-size: 15px;
+}
+
+.extra-market-controls .extra-hint {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #75897d;
+}
+
+/* 9. 매물 목록 + 지도 */
+
+.map-layout,
+.lesson-map-layout {
+  width: 100%;
+  min-width: 0;
+}
+
+.lesson-map-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(280px, 330px)
+    minmax(0, 1fr);
+  height: 660px;
+  overflow: hidden;
+}
+
+.lesson-map-layout.sidebar-expanded {
+  grid-template-columns:
+    minmax(330px, 440px)
+    minmax(0, 1fr);
+}
+
+.lesson-map-layout > .listing-panel,
+.lesson-map-layout > .property-sidebar,
+.lesson-map-layout > .map-wrapper {
+  min-width: 0;
+  min-height: 0;
+}
+
+.lesson-map-layout > .listing-panel,
+.lesson-map-layout > .property-sidebar {
+  height: 100%;
+}
+
+.lesson-map-layout > .map-wrapper {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.lesson-map-layout #map {
+  width: 100%;
+}
+
+/* 매물 목록 내부 스크롤 */
+
+.listing-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.listing-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 매물 상세 정보 */
+
+.property-sidebar {
+  min-width: 0;
+}
+
+.sidebar-detail-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detail-panel,
+.detail-price,
+.detail-finance,
+.lesson-check {
+  min-width: 0;
+}
+
+.detail-finance > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.detail-finance b {
+  overflow-wrap: anywhere;
+}
+
+.detail-svg {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* 10. 매수 / 매도 버튼 영역 */
+
+.trade-footer {
+  width: 100%;
+  min-width: 0;
+}
+
+.trade-footer .inline-decision {
+  min-width: 0;
+}
+
+.trade-footer .inline-decision .purchase-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.trade-footer .inline-decision .purchase-summary > b {
+  grid-column: 1 / -1;
+}
+
+.trade-footer .inline-decision .decision-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.trade-footer .inline-decision .decision-buttons > button {
+  flex: 1 1 150px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* 11. 최종 결과 및 결산 */
+
+.final-metrics {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 200px), 1fr)
+  );
+  gap: 12px;
+}
+
+.performance-metrics {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 180px), 1fr)
+  );
+  gap: 12px;
+}
+
+.performance-metrics > *,
+.final-metrics > * {
+  min-width: 0;
+}
+
+.performance-metrics strong,
+.final-metrics b {
+  overflow-wrap: anywhere;
+}
+
+.review-cards {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 240px), 1fr)
+  );
+  gap: 12px;
+}
+
+.review-card {
+  min-width: 0;
+}
+
+.final-transactions {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 모달 화면 밖으로 나가는 문제 */
+
+#modal {
+  box-sizing: border-box;
+  width: min(760px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: min(88dvh, 900px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(16px, 3vw, 28px);
+}
+
+#dialog-body {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#modal .performance-metrics strong {
+  font-size: clamp(20px, 2.5vw, 30px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ================================================
+   태블릿 / 작은 노트북: 1100px 이하
+   ================================================ */
+
+@media (max-width: 1100px) {
+
+  .profile-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v8-project-news-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lesson-map-layout {
+    grid-template-columns:
+      minmax(275px, 310px)
+      minmax(0, 1fr);
+  }
+
+  .lesson-map-layout.sidebar-expanded {
+    grid-template-columns:
+      minmax(290px, 350px)
+      minmax(0, 1fr);
+  }
+
+  .classroom-market {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .market-toolbar .search-control {
+    flex-basis: 100%;
+  }
+}
+
+/* ================================================
+   태블릿 세로 / 좁은 창: 900px 이하
+   ================================================ */
+
+@media (max-width: 900px) {
+
+  /* 지도와 목록을 위아래로 배치 */
+
+  .lesson-map-layout,
+  .lesson-map-layout.sidebar-expanded {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    overflow: visible;
+  }
+
+  .lesson-map-layout > .listing-panel {
+    height: clamp(300px, 43dvh, 440px);
+    max-height: none;
+    overflow: hidden;
+    border-right: 0;
+    border-bottom: 1px solid #e4eae6;
+  }
+
+  .lesson-map-layout > .property-sidebar {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid #e4eae6;
+  }
+
+  .property-sidebar .sidebar-detail-scroll {
+    flex: 1 1 auto;
+    overflow: visible;
+    max-height: none;
+  }
+
+  /* 지도 높이는 확보하고 너비만 변경 */
+
+  .lesson-map-layout > .map-wrapper {
+    display: block;
+    position: relative;
+    height: clamp(360px, 54dvh, 520px);
+    min-height: 360px;
+    overflow: hidden;
+  }
+
+  .lesson-map-layout #map {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    flex: none;
+  }
+
+  /* 기존 지도 위 상세창 호환 */
+
+  .lesson-map-layout .detail-position {
+    width: min(340px, calc(100% - 24px));
+    max-height: calc(100% - 90px);
+  }
+
+  .asset-summary {
+    gap: 10px;
+  }
+
+  .yearline {
+    justify-content: flex-start;
+  }
+}
+
+/* ================================================
+   모바일: 760px 이하
+   ================================================ */
+
+@media (max-width: 760px) {
+
+  .intro-wrap {
+    min-height: auto;
+    padding-top: 24px;
+    padding-bottom: 36px;
+  }
+
+  .profile-choices {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v8-project-news-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-top,
+  .news-section,
+  .market-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .asset-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .asset-summary > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .policy-inline > span {
+    flex: 1 1 170px;
+  }
+
+  .market-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .market-toolbar .search-control {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .market-toolbar select,
+  .market-toolbar .reset-filter {
+    width: 100%;
+    min-width: 0;
+    grid-column: auto;
+  }
+
+  .extra-market-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .extra-market-controls .extra-hint {
+    grid-column: 1 / -1;
+  }
+
+  .lesson-map-layout > .map-wrapper {
+    height: 400px;
+    min-height: 400px;
+  }
+
+  .trade-footer .inline-decision .purchase-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trade-footer .inline-decision .decision-buttons > button {
+    flex: 1 1 145px;
+  }
+
+  .final-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ================================================
+   작은 모바일: 480px 이하
+   ================================================ */
+
+@media (max-width: 480px) {
+
+  .site-header {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .brand {
+    font-size: 21px;
+    gap: 9px;
+  }
+
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
+  .brand small {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+  }
+
+  .site-header nav {
+    gap: 4px;
+  }
+
+  .site-header nav button {
+    font-size: 13px;
+    padding: 6px;
+  }
+
+  .top-left strong {
+    font-size: 24px;
+  }
+
+  .yr {
+    font-size: 13px;
+    padding: 7px 6px;
+  }
+
+  .asset-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .asset-summary > div:last-child {
+    grid-column: auto;
+  }
+
+  .extra-market-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .market-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .market-toolbar .search-control {
+    grid-column: auto;
+  }
+
+  .market-toolbar select,
+  .market-toolbar .reset-filter {
+    width: 100%;
+  }
+
+  .lesson-map-layout > .listing-panel {
+    height: 340px;
+  }
+
+  .lesson-map-layout > .map-wrapper {
+    height: 360px;
+    min-height: 360px;
+  }
+
+  .trade-footer .inline-decision .decision-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trade-footer .inline-decision .decision-buttons > button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .final-metrics,
+  .performance-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #modal {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 14px;
+  }
+}
